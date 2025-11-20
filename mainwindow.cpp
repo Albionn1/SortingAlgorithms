@@ -241,19 +241,19 @@ void MainWindow::onStartClicked() {
     if (selected == "Bubble Sort") {
         currentAlgorithm = SortAlgorithm::Bubble;
         i = 0; j = 0;
-        descriptionLabel->setText("Bubble Sort: Repeatedly compares adjacent elements...");
+        descriptionLabel->setText("Bubble Sort: Simple but slow. Repeatedly swaps adjacent elements until sorted.");
         appendLog("Starting Bubble Sort.");
     }
     else if (selected == "Insertion Sort") {
         currentAlgorithm = SortAlgorithm::Insertion;
         i = 1; j = 0; key = 0; inserting = false;
-        descriptionLabel->setText("Insertion Sort: Builds the sorted array...");
+        descriptionLabel->setText("Insertion Sort: Builds the sorted array one item at a time. Fast on nearly sorted data.");
         appendLog("Starting Insertion Sort.");
     }
     else if (selected == "Selection Sort") {
         currentAlgorithm = SortAlgorithm::Selection;
         i = 0; j = 0; minIndex = 0;
-        descriptionLabel->setText("Selection Sort: Repeatedly finds the minimum...");
+        descriptionLabel->setText("Selection Sort: Finds the minimum and places it. Easy to understand, but always O(n²).");
         appendLog("Starting Selection Sort.");
     }
     else if (selected == "Quick Sort") {
@@ -263,7 +263,7 @@ void MainWindow::onStartClicked() {
             quickStack.push({0, static_cast<int>(array.size() - 1)});
         }
         quickI = quickJ = quickPivot = -1;
-        descriptionLabel->setText("Quick Sort: Picks a pivot and partitions...");
+        descriptionLabel->setText("Quick Sort: Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
         appendLog("Starting Quick Sort.");
     }
 
