@@ -663,7 +663,7 @@ void MainWindow::onTimerTick(){
             }
         }
 
-        // 🔹 Merge step-by-step
+        // Merge step-by-step
         if (merging) {
             if (mergeI <= mergeMid && mergeJ <= mergeRight) {
                 highlightComparison(mergeI, mergeJ, -1);
