@@ -191,12 +191,14 @@ void MainWindow::onSliderMoved(int value) {
 
             highlightComparison(i, j, pivot);
 
-            appendLog(QString("Scrub %1: L[%2-%3] R[%4-%5] M[%6-%7]")
-                          .arg(value)
-                          .arg(mergeLeftStart).arg(mergeLeftEnd)
-                          .arg(mergeRightStart).arg(mergeRightEnd)
-                          .arg(mergeMergedStart).arg(mergeMergedEnd));
+        //     appendLog(QString("Scrub %1: L[%2-%3] R[%4-%5] M[%6-%7]")
+        //                   .arg(value)
+        //                   .arg(mergeLeftStart).arg(mergeLeftEnd)
+        //                   .arg(mergeRightStart).arg(mergeRightEnd)
+        //                   .arg(mergeMergedStart).arg(mergeMergedEnd));
 
+        // uncomment to test if bars are colored while going back in history()
+        //
         }
 
 
@@ -280,19 +282,19 @@ void MainWindow::onStartClicked() {
     if (selected == "Bubble Sort") {
         currentAlgorithm = SortAlgorithm::Bubble;
         i = 0; j = 0;
-        descriptionLabel->setText("Bubble Sort: Simple but slow. Repeatedly swaps adjacent elements until sorted.");
+        descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted.");
         appendLog("Starting Bubble Sort.");
     }
     else if (selected == "Insertion Sort") {
         currentAlgorithm = SortAlgorithm::Insertion;
         i = 1; j = 0; key = 0; inserting = false;
-        descriptionLabel->setText("Insertion Sort: Builds the sorted array one item at a time. Fast on nearly sorted data.");
+        descriptionLabel->setText("Insertion Sort - Builds the sorted array one item at a time. Fast on nearly sorted data.");
         appendLog("Starting Insertion Sort.");
     }
     else if (selected == "Selection Sort") {
         currentAlgorithm = SortAlgorithm::Selection;
         i = 0; j = 0; minIndex = 0;
-        descriptionLabel->setText("Selection Sort: Finds the minimum and places it. Easy to understand, but always O(n²).");
+        descriptionLabel->setText("Selection Sort - Finds the minimum and places it. Easy to understand, but always O(n²).");
         appendLog("Starting Selection Sort.");
     }
     else if (selected == "Quick Sort") {
@@ -302,7 +304,7 @@ void MainWindow::onStartClicked() {
             quickStack.push({0, static_cast<int>(array.size() - 1)});
         }
         quickI = quickJ = quickPivot = -1;
-        descriptionLabel->setText("Quick Sort: Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
+        descriptionLabel->setText("Quick Sort - Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
         appendLog("Starting Quick Sort.");
     }
     else if (selected == "Merge Sort"){
@@ -318,7 +320,7 @@ void MainWindow::onStartClicked() {
         mergeLeftStart = mergeLeftEnd = -1;
         mergeRightStart = mergeRightEnd = -1;
         mergeMergedStart = mergeMergedEnd = -1;
-
+        descriptionLabel->setText("Merge Sort – A stable, divide-and-conquer algorithm that recursively splits and merges arrays for guaranteed O(n log n) performance.");
         appendLog("Starting Merge Sort...");
 
 
