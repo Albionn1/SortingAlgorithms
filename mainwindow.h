@@ -17,6 +17,7 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QWidget>
+#include <stack>
 #include <vector>
 
 QT_BEGIN_NAMESPACE
@@ -43,8 +44,8 @@ private slots:
 
 private:
 
-    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick};
-    SortAlgorithm currentAlgorithm = SortAlgorithm::Bubble;
+    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge};
+    SortAlgorithm currentAlgorithm;
 
     //Sorting state
     int i = 0, j = 0, key = 0, minIndex =0;
@@ -55,6 +56,19 @@ private:
     int quickI = -1, quickJ = -1;
     bool inserting = false;
     int pivotValue = -1;
+
+    int mergeLeftStart = -1, mergeLeftEnd = -1;
+    int mergeRightStart = -1, mergeRightEnd = -1;
+    int mergeMergedStart = -1, mergeMergedEnd = -1;
+
+    // QStack<QPair<int, int>> mergeStack;
+    std::vector<int> mergeBuffer;
+    std::stack<std::tuple<int, int, bool>> mergeStack; // bool = isMergePhase
+
+    int mergeLeft = -1, mergeMid = -1, mergeRight = -1;
+    int mergeI = -1, mergeJ = -1, mergeK = -1;
+    bool merging = false;
+
 
     bool stepMode = false;
 
@@ -91,6 +105,14 @@ private:
     std::vector<int> iHistory;
     std::vector<int> jHistory;
     QSet<int> sortedIndices;
+    std::vector<int> mergeLeftStartHistory;
+    std::vector<int> mergeLeftEndHistory;
+    std::vector<int> mergeRightStartHistory;
+    std::vector<int> mergeRightEndHistory;
+    std::vector<int> mergeMergedStartHistory;
+    std::vector<int> mergeMergedEndHistory;
+
+
 
 
     int currentStep = 0;

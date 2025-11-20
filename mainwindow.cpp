@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Core widgets
     algorithmBox = new QComboBox();
-    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort"});
+    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort"});
 
     startButton = new QPushButton("Start Sort");
     resetButton = new QPushButton("Reset to Default");
@@ -101,10 +101,13 @@ MainWindow::MainWindow(QWidget *parent)
         itemWidget->setLayout(itemLayout);
         return itemWidget;
     };
-    legendLayout->addWidget(makeLegendItem("blue", "Unsorted"));
-    legendLayout->addWidget(makeLegendItem("red", "Comparing"));
-    legendLayout->addWidget(makeLegendItem("yellow", "Pivot"));
-    legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+    legendLayout->addWidget(makeLegendItem("orange", "Comparing"));
+    legendLayout->addWidget(makeLegendItem("yellow", "Sorted"));
+    legendLayout->addWidget(makeLegendItem("mediumorchid", "Pivot"));
+    legendLayout->addWidget(makeLegendItem("cyan", "Left Half"));
+    legendLayout->addWidget(makeLegendItem("deeppink", "Right Half"));
+    legendLayout->addWidget(makeLegendItem("lime", "Merged Output"));
+
     QWidget* legendWidget = new QWidget();
     legendWidget->setLayout(legendLayout);
     layout->addWidget(legendWidget);
@@ -150,6 +153,7 @@ void MainWindow::onRandomClicked(){
 void MainWindow::onSliderMoved(int value) {
     if (value < 0 || value >= static_cast<int>(history.size())) return;
 
+
     array = history[value];
     drawArray(array);
     currentStep = value;
@@ -166,6 +170,36 @@ void MainWindow::onSliderMoved(int value) {
 
             highlightComparison(jHistory[value], quickPivot, quickPivot);
         }
+    }
+
+    if(currentAlgorithm == SortAlgorithm::Merge){
+        if (value >= 0 && value < history.size()) {
+            array = history[value];
+
+            // Restore merge zone history if you're scrubbing Merge Sort
+            if (currentAlgorithm == SortAlgorithm::Merge && value < mergeLeftStartHistory.size()) {
+                mergeLeftStart = mergeLeftStartHistory[value];
+                mergeLeftEnd = mergeLeftEndHistory[value];
+                mergeRightStart = mergeRightStartHistory[value];
+                mergeRightEnd = mergeRightEndHistory[value];
+                mergeMergedStart = mergeMergedStartHistory[value];
+                mergeMergedEnd = mergeMergedEndHistory[value];
+            }
+            int i = iHistory[value];
+            int j = jHistory[value];
+            int pivot = pivotHistory[value];
+
+            highlightComparison(i, j, pivot);
+
+            appendLog(QString("Scrub %1: L[%2-%3] R[%4-%5] M[%6-%7]")
+                          .arg(value)
+                          .arg(mergeLeftStart).arg(mergeLeftEnd)
+                          .arg(mergeRightStart).arg(mergeRightEnd)
+                          .arg(mergeMergedStart).arg(mergeMergedEnd));
+
+        }
+
+
     }
 
 
@@ -200,6 +234,11 @@ void MainWindow::onResetClicked(){
     slider->setValue(0);
     slider->setMaximum(0);
     currentStep = 0;
+
+    timer->stop();
+    drawArray(array);
+    appendLog("Reset to default.");
+
 
 }
 
@@ -265,6 +304,24 @@ void MainWindow::onStartClicked() {
         quickI = quickJ = quickPivot = -1;
         descriptionLabel->setText("Quick Sort: Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
         appendLog("Starting Quick Sort.");
+    }
+    else if (selected == "Merge Sort"){
+        currentAlgorithm = SortAlgorithm::Merge;
+        mergeStack = {};
+        mergeBuffer = array;
+        mergeStack.push({0, static_cast<int>(array.size() - 1), false}); // false = split phase
+        merging = false;
+
+        mergeLeft = mergeMid = mergeRight = -1;
+        mergeI = mergeJ = mergeK = -1;
+
+        mergeLeftStart = mergeLeftEnd = -1;
+        mergeRightStart = mergeRightEnd = -1;
+        mergeMergedStart = mergeMergedEnd = -1;
+
+        appendLog("Starting Merge Sort...");
+
+
     }
 
     // Draw initial array
@@ -545,6 +602,184 @@ void MainWindow::onTimerTick(){
         }
     }
     //QUICKSORT ALGORITHM ENDS HERE
+
+
+    //MERGE SORT ALGORITHM STARTS HERE
+    else if (currentAlgorithm == SortAlgorithm::Merge) {
+        if (!mergeStack.empty()) {
+            appendLog(QString("mergeStack size: %1").arg(mergeStack.size()));
+
+            if (!merging) {
+                auto [left, right, isMerge] = mergeStack.top();
+                mergeStack.pop();
+
+                if (!isMerge) {
+                    if (left < right) {
+                        int mid = (left + right) / 2;
+                        mergeStack.push({left, right, true});       // merge phase
+                        mergeStack.push({mid + 1, right, false});   // right half
+                        mergeStack.push({left, mid, false});        // left half
+
+                        mergeLeftStartHistory.push_back(mergeLeftStart);
+                        mergeLeftEndHistory.push_back(mergeLeftEnd);
+                        mergeRightStartHistory.push_back(mergeRightStart);
+                        mergeRightEndHistory.push_back(mergeRightEnd);
+                        mergeMergedStartHistory.push_back(mergeMergedStart);
+                        mergeMergedEndHistory.push_back(mergeMergedEnd);
+
+                        history.push_back(array);
+                        iHistory.push_back(-1);
+                        jHistory.push_back(-1);
+                        pivotHistory.push_back(-1);
+
+                        currentStep = static_cast<int>(history.size()) - 1;
+                        slider->setMaximum(currentStep);
+                        slider->setValue(currentStep);
+                    }
+                    return;
+                }
+
+                // Initialize merge phase
+                if (left >= right) {
+                    // Skip invalid merge
+                    return;
+                }
+
+                mergeLeft = left;
+                mergeRight = right;
+                mergeMid = (left + right) / 2;
+                mergeI = mergeLeft;
+                mergeJ = mergeMid + 1;
+                mergeK = mergeLeft;
+                merging = true;
+
+                // Set merge zone ranges
+                mergeLeftStart = mergeLeft;
+                mergeLeftEnd = mergeMid;
+                mergeRightStart = mergeMid + 1;
+                mergeRightEnd = mergeRight;
+                mergeMergedStart = mergeLeft;
+                mergeMergedEnd = mergeRight;
+            }
+        }
+
+        // 🔹 Merge step-by-step
+        if (merging) {
+            if (mergeI <= mergeMid && mergeJ <= mergeRight) {
+                highlightComparison(mergeI, mergeJ, -1);
+                if (array[mergeI] <= array[mergeJ]) {
+                    mergeBuffer[mergeK++] = array[mergeI++];
+
+                    mergeLeftStartHistory.push_back(mergeLeftStart);
+                    mergeLeftEndHistory.push_back(mergeLeftEnd);
+                    mergeRightStartHistory.push_back(mergeRightStart);
+                    mergeRightEndHistory.push_back(mergeRightEnd);
+                    mergeMergedStartHistory.push_back(mergeMergedStart);
+                    mergeMergedEndHistory.push_back(mergeMergedEnd);
+
+                    history.push_back(array);
+                    iHistory.push_back(-1);
+                    jHistory.push_back(-1);
+                    pivotHistory.push_back(-1);
+
+                } else {
+                    mergeBuffer[mergeK++] = array[mergeJ++];
+
+                    mergeLeftStartHistory.push_back(mergeLeftStart);
+                    mergeLeftEndHistory.push_back(mergeLeftEnd);
+                    mergeRightStartHistory.push_back(mergeRightStart);
+                    mergeRightEndHistory.push_back(mergeRightEnd);
+                    mergeMergedStartHistory.push_back(mergeMergedStart);
+                    mergeMergedEndHistory.push_back(mergeMergedEnd);
+
+                    history.push_back(array);
+                    iHistory.push_back(-1);
+                    jHistory.push_back(-1);
+                    pivotHistory.push_back(-1);
+
+
+                }
+            } else if (mergeI <= mergeMid) {
+                highlightComparison(mergeI, -1, -1);
+                mergeBuffer[mergeK++] = array[mergeI++];
+
+                mergeLeftStartHistory.push_back(mergeLeftStart);
+                mergeLeftEndHistory.push_back(mergeLeftEnd);
+                mergeRightStartHistory.push_back(mergeRightStart);
+                mergeRightEndHistory.push_back(mergeRightEnd);
+                mergeMergedStartHistory.push_back(mergeMergedStart);
+                mergeMergedEndHistory.push_back(mergeMergedEnd);
+
+                history.push_back(array);
+                iHistory.push_back(-1);
+                jHistory.push_back(-1);
+                pivotHistory.push_back(-1);
+
+                currentStep = static_cast<int>(history.size()) - 1;
+                slider->setMaximum(currentStep);
+                slider->setValue(currentStep);
+            } else if (mergeJ <= mergeRight) {
+                highlightComparison(-1, mergeJ, -1);
+                mergeBuffer[mergeK++] = array[mergeJ++];
+
+                mergeLeftStartHistory.push_back(mergeLeftStart);
+                mergeLeftEndHistory.push_back(mergeLeftEnd);
+                mergeRightStartHistory.push_back(mergeRightStart);
+                mergeRightEndHistory.push_back(mergeRightEnd);
+                mergeMergedStartHistory.push_back(mergeMergedStart);
+                mergeMergedEndHistory.push_back(mergeMergedEnd);
+
+                history.push_back(array);
+                iHistory.push_back(-1);
+                jHistory.push_back(-1);
+                pivotHistory.push_back(-1);
+
+                currentStep = static_cast<int>(history.size()) - 1;
+                slider->setMaximum(currentStep);
+                slider->setValue(currentStep);
+            } else {
+                for (int i = mergeLeft; i <= mergeRight; ++i)
+                    array[i] = mergeBuffer[i];
+
+                highlightComparison(-1, -1, mergeK - 1);
+
+                mergeLeftStartHistory.push_back(mergeLeftStart);
+                mergeLeftEndHistory.push_back(mergeLeftEnd);
+                mergeRightStartHistory.push_back(mergeRightStart);
+                mergeRightEndHistory.push_back(mergeRightEnd);
+                mergeMergedStartHistory.push_back(mergeMergedStart);
+                mergeMergedEndHistory.push_back(mergeMergedEnd);
+
+                history.push_back(array);
+                iHistory.push_back(-1);
+                jHistory.push_back(-1);
+                pivotHistory.push_back(-1);
+
+                currentStep = static_cast<int>(history.size()) - 1;
+                slider->setMaximum(currentStep);
+                slider->setValue(currentStep);
+
+                drawArray(array);
+                appendLog(QString("Merged [%1, %2]").arg(mergeLeft).arg(mergeRight));
+
+                // Reset merge state
+                mergeLeft = mergeMid = mergeRight = -1;
+                mergeI = mergeJ = mergeK = -1;
+                merging = false;
+
+                mergeLeftStart = mergeLeftEnd = -1;
+                mergeRightStart = mergeRightEnd = -1;
+                mergeMergedStart = mergeMergedEnd = -1;
+
+                if (mergeStack.empty()) {
+                    timer->stop();
+                    drawArrayFinished(array);
+                    appendLog("Merge Sort complete.");
+                }
+            }
+        }
+    }
+    //MERGE SORT ALGORITHM ENDS HERE
 }
 
 void MainWindow::updateScene() {
@@ -643,14 +878,23 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex =  -
         int barHeight = (maxVal > 0) ? (array[k] * maxBarHeight / maxVal) : 0;
         QColor color = Qt::blue;
 
-        if (k == pivotIndex && pivotIndex >= 0) {
-            color = Qt::yellow; // pivot always wins
-            // barHeight += 10;
-        } else if ((k == index1 || k == index2)) {
-            color = Qt::red; // comparison
-        } else if (sortedIndices.contains(k)) {
-            color = Qt::green; // sorted
+        if (currentAlgorithm == SortAlgorithm::Merge) {
+            if (k >= mergeLeftStart && k <= mergeLeftEnd)
+                color = QColor(0, 255, 255); // Neon Blue – Left Half
+            else if (k >= mergeRightStart && k <= mergeRightEnd)
+                color = QColor(255, 20, 147); // Neon Pink – Right Half
+            else if (k >= mergeMergedStart && k <= mergeMergedEnd)
+                color = QColor(0, 255, 0); // Neon Green – Merged Output
         }
+
+        if (k == pivotIndex && pivotIndex >= 0) {
+            color = QColor(186, 85, 211); // Bright Purple – Pivot
+        } else if ((k == index1 || k == index2)) {
+            color = QColor(255, 165, 0); // Bright Orange – Comparison
+        } else if (sortedIndices.contains(k)) {
+            color = QColor(255, 255, 0); // Bright Yellow – Sorted
+        }
+
         // qDebug() << "Highlighting: index1=" << index1
         //          << " index2=" << index2
         //          << " pivotIndex=" << pivotIndex;
