@@ -41,10 +41,11 @@ private slots:
     void onStepModeToggled(bool checked);
     void onSliderMoved(int value);
     void onRandomClicked();
+    void onAlgorithmSelected(const QString& selected);
 
 private:
 
-    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge};
+    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap};
     SortAlgorithm currentAlgorithm;
 
     //Sorting state
@@ -68,6 +69,26 @@ private:
     int mergeLeft = -1, mergeMid = -1, mergeRight = -1;
     int mergeI = -1, mergeJ = -1, mergeK = -1;
     bool merging = false;
+
+    int heapSize = 0;
+    bool heapBuilding = false;
+    bool heapSwapping = false;
+    std::stack<int> heapStack;
+    int heapI = -1;
+    int heapJ = -1;
+
+    inline void pushFrame(const std::vector<int>& arr, int i, int j, int pivot = -1) {
+        history.push_back(arr);
+        iHistory.push_back(i);
+        jHistory.push_back(j);
+        pivotHistory.push_back(pivot);
+        {
+            QSignalBlocker block(slider);
+            int step = static_cast<int>(history.size()) - 1;
+            slider->setMaximum(step);
+            slider->setValue(step);
+        }
+    }
 
 
     bool stepMode = false;
@@ -97,6 +118,7 @@ private:
     QLabel* stepDescriptionLabel;
     QPushButton* randomButton;
     QGraphicsTextItem* complexityLabel = nullptr;
+    QLabel* legendTitleLabel;
 
 
     std::vector<int> array;

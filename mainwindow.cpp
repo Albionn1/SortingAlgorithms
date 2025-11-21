@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Core widgets
     algorithmBox = new QComboBox();
-    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort"});
+    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort"});
 
     startButton = new QPushButton("Start Sort");
     resetButton = new QPushButton("Reset to Default");
@@ -88,29 +88,20 @@ MainWindow::MainWindow(QWidget *parent)
     layout->addLayout(sliderRow);
 
     // Legend
+
+
+    QVBoxLayout* legendContainer = new QVBoxLayout();
+    legendTitleLabel = new QLabel("Legend");
+    legendTitleLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
     legendLayout = new QHBoxLayout();
-    auto makeLegendItem = [](const QString& colorName, const QString& labelText) {
-        QLabel* colorBox = new QLabel();
-        colorBox->setFixedSize(20, 20);
-        colorBox->setStyleSheet("background-color:" + colorName + "; border:1px solid #444;");
-        QLabel* textLabel = new QLabel(labelText);
-        QHBoxLayout* itemLayout = new QHBoxLayout();
-        itemLayout->addWidget(colorBox);
-        itemLayout->addWidget(textLabel);
-        QWidget* itemWidget = new QWidget();
-        itemWidget->setLayout(itemLayout);
-        return itemWidget;
-    };
-    legendLayout->addWidget(makeLegendItem("orange", "Comparing"));
-    legendLayout->addWidget(makeLegendItem("yellow", "Sorted"));
-    legendLayout->addWidget(makeLegendItem("mediumorchid", "Pivot"));
-    legendLayout->addWidget(makeLegendItem("cyan", "Left Half"));
-    legendLayout->addWidget(makeLegendItem("deeppink", "Right Half"));
-    legendLayout->addWidget(makeLegendItem("lime", "Merged Output"));
+
+    legendContainer->addWidget(legendTitleLabel);
+    legendContainer->addLayout(legendLayout);
 
     QWidget* legendWidget = new QWidget();
-    legendWidget->setLayout(legendLayout);
+    legendWidget->setLayout(legendContainer);
     layout->addWidget(legendWidget);
+
 
     // Main visual + log
     layout->addWidget(view);
@@ -131,6 +122,66 @@ MainWindow::MainWindow(QWidget *parent)
     connect(nextStepButton, &QPushButton::clicked, this, &MainWindow::onTimerTick);
     connect(slider, &QSlider::valueChanged, this, &MainWindow::onSliderMoved);
     connect(randomButton, &QPushButton::clicked, this, &MainWindow::onRandomClicked);
+    connect(algorithmBox, &QComboBox::currentTextChanged, this, &MainWindow::onAlgorithmSelected);
+
+}
+
+void MainWindow::onAlgorithmSelected(const QString& selected) {
+    // Clear existing legend items
+    QLayoutItem* child;
+    while ((child = legendLayout->takeAt(0)) != nullptr) {
+        delete child->widget();
+        delete child;
+    }
+
+    auto makeLegendItem = [](const QString& colorName, const QString& labelText) {
+        QLabel* colorBox = new QLabel();
+        colorBox->setFixedSize(20, 20);
+        colorBox->setStyleSheet("background-color:" + colorName + "; border:1px solid #444;");
+        QLabel* textLabel = new QLabel(labelText);
+        QHBoxLayout* itemLayout = new QHBoxLayout();
+        itemLayout->addWidget(colorBox);
+        itemLayout->addWidget(textLabel);
+        QWidget* itemWidget = new QWidget();
+        itemWidget->setLayout(itemLayout);
+        return itemWidget;
+    };
+
+    if (selected == "Heap Sort") {
+        legendTitleLabel->setText("Legend — Heap Sort");
+        legendLayout->addWidget(makeLegendItem("orange", "Heapify Comparison"));
+        legendLayout->addWidget(makeLegendItem("red", "Extraction Swap"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted Element"));
+    }
+    else if (selected == "Quick Sort") {
+        legendTitleLabel->setText("Legend — Quick Sort");
+        legendLayout->addWidget(makeLegendItem("mediumorchid", "Pivot"));
+        legendLayout->addWidget(makeLegendItem("dodgerblue", "Comparing"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+    }
+    else if (selected == "Merge Sort") {
+        legendTitleLabel->setText("Legend — Merge Sort");
+        legendLayout->addWidget(makeLegendItem("cyan", "Left Half"));
+        legendLayout->addWidget(makeLegendItem("deeppink", "Right Half"));
+        legendLayout->addWidget(makeLegendItem("green", "Merged Output"));
+    }
+    else if (selected == "Bubble Sort") {
+        legendTitleLabel->setText("Legend — Bubble Sort");
+        legendLayout->addWidget(makeLegendItem("crimson", "Current Comparison"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted Tail"));
+    }
+    else if (selected == "Insertion Sort") {
+        legendTitleLabel->setText("Legend — Insertion Sort");
+        legendLayout->addWidget(makeLegendItem("royalblue", "Key Element"));
+        legendLayout->addWidget(makeLegendItem("orange", "Comparing Position"));
+        legendLayout->addWidget(makeLegendItem("green", "Inserted / Sorted"));
+    }
+    else if (selected == "Selection Sort") {
+        legendTitleLabel->setText("Legend — Selection Sort");
+        legendLayout->addWidget(makeLegendItem("purple", "Current Minimum"));
+        legendLayout->addWidget(makeLegendItem("red", "Comparing"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted Prefix"));
+    }
 }
 
 void MainWindow::onRandomClicked(){
@@ -191,18 +242,16 @@ void MainWindow::onSliderMoved(int value) {
 
             highlightComparison(i, j, pivot);
 
-        //     appendLog(QString("Scrub %1: L[%2-%3] R[%4-%5] M[%6-%7]")
-        //                   .arg(value)
-        //                   .arg(mergeLeftStart).arg(mergeLeftEnd)
-        //                   .arg(mergeRightStart).arg(mergeRightEnd)
-        //                   .arg(mergeMergedStart).arg(mergeMergedEnd));
-
-        // uncomment to test if bars are colored while going back in history()
-        //
         }
-
-
     }
+    if (currentAlgorithm == SortAlgorithm::Heap) {
+        if (value < static_cast<int>(iHistory.size()) &&
+            value < static_cast<int>(jHistory.size()) &&
+            value < static_cast<int>(pivotHistory.size())) {
+            highlightComparison(iHistory[value], jHistory[value], pivotHistory[value]);
+        }
+    }
+
 
 
     // Optional: update step label
@@ -322,8 +371,39 @@ void MainWindow::onStartClicked() {
         mergeMergedStart = mergeMergedEnd = -1;
         descriptionLabel->setText("Merge Sort – A stable, divide-and-conquer algorithm that recursively splits and merges arrays for guaranteed O(n log n) performance.");
         appendLog("Starting Merge Sort...");
+    }
+    else if (selected == "Heap Sort") {
+        currentAlgorithm = SortAlgorithm::Heap;
 
+        // Reset heap state
+        heapStack = std::stack<int>();
+        heapBuilding = true;
+        heapSwapping = false;
+        heapI = heapJ = -1;
+        heapSize = static_cast<int>(array.size());
 
+        // Clear visualization state
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
+        // Push all non-leaf nodes for initial heapify (bottom-up).
+        // Push in increasing order so the stack pops the highest index first
+        // (i.e. we process the deepest non-leaf nodes before the root).
+        int lastNonLeaf = heapSize / 2 - 1;
+        for (int k = 0; k <= lastNonLeaf; ++k) {
+            heapStack.push(k);
+        }
+
+        // Initial frame
+        pushFrame(array, -1, -1, -1);
+
+        appendLog(QString("Heap Sort starting. heapSize=%1").arg(heapSize));
+
+        // Start timer using the configured delay
+        if (timer && !timer->isActive()) timer->start(delayBox->value());
     }
 
     // Draw initial array
@@ -362,7 +442,7 @@ void MainWindow::onTimerTick(){
                     appendLog(QString("Swap: %1 > %2 -> swapping.").arg(array[j]).arg(array[j+1]));
 
                     std::swap(array[j], array[j+1]);
-                    drawArray(array);
+                    // drawArray(array);
                 }else{
                     appendLog(QString("No swap: %1 <= %2.").arg(array[j]).arg(array[j+1]));
                 }
@@ -372,7 +452,14 @@ void MainWindow::onTimerTick(){
                     return;
                 }
             }else{
+
+                int settledIndex = array.size() - i - 1;
+                sortedIndices.insert(settledIndex);
+
                 appendLog(QString("Pass %1 complete. Largest element settled at position %2.").arg(i+1).arg(array.size() - i - 1));
+
+                highlightComparison(settledIndex, -1, -1);
+
                 j = 0;
                 i++;
             }
@@ -380,7 +467,15 @@ void MainWindow::onTimerTick(){
             timer->stop();
             appendLog("Sorting complete.");
             appendLog("Array is sorted.");
+
+            for (int k = 0; k < array.size(); ++k) {
+                sortedIndices.insert(k);
+            }
+            highlightComparison(-1, -1, -1);
+
             drawArrayFinished(array);
+
+
 
         }
 
@@ -405,6 +500,8 @@ void MainWindow::onTimerTick(){
 
                 appendLog(QString("Taking key = %1 at index %2").arg(key).arg(i));
                 appendLog(stepLabel->text());
+
+                highlightComparison(i, -1, -1);
                 return;
             } else {
                 if (j >= 0 && array[j] > key) {
@@ -417,7 +514,9 @@ void MainWindow::onTimerTick(){
 
                     appendLog(stepLabel->text());
                     array[j + 1] = array[j];
-                    drawArray(array);
+
+                    highlightComparison(j, j + 1, -1);
+
                     j--;
                     return;
                 } else {
@@ -429,7 +528,10 @@ void MainWindow::onTimerTick(){
                     array[j + 1] = key;
                     appendLog(QString("Inserting key %1 at index %2").arg(key).arg(j + 1));
                     appendLog(stepLabel->text());
-                    drawArray(array);
+
+                    sortedIndices.insert(j + 1);
+                    highlightComparison(j + 1, -1, -1);
+
                     i++;
                     inserting = false;
                     return;
@@ -481,7 +583,7 @@ void MainWindow::onTimerTick(){
                     std::swap(array[i], array[minIndex]);
                     appendLog(QString("Swapping index %1 (%2) with min index %3 (%4)")
                                   .arg(i).arg(array[minIndex]).arg(minIndex).arg(array[i]));
-                    drawArray(array);
+
                 } else {
                     appendLog(QString("No swap needed for index %1").arg(i));
                 }
@@ -761,7 +863,6 @@ void MainWindow::onTimerTick(){
                 slider->setMaximum(currentStep);
                 slider->setValue(currentStep);
 
-                drawArray(array);
                 appendLog(QString("Merged [%1, %2]").arg(mergeLeft).arg(mergeRight));
 
                 // Reset merge state
@@ -780,9 +881,121 @@ void MainWindow::onTimerTick(){
                 }
             }
         }
+    }    //MERGE SORT ALGORITHM ENDS HERE
+    else if (currentAlgorithm == SortAlgorithm::Heap) {
+        // Phase 1: Build max-heap incrementally (bottom-up)
+        if (heapBuilding) {
+            if (!heapStack.empty()) {
+                heapI = heapStack.top(); heapStack.pop();
+
+                int largest = heapI;
+                int left = 2 * heapI + 1;
+                int right = 2 * heapI + 2;
+
+                if (left  < heapSize && array[left]  > array[largest]) largest = left;
+                if (right < heapSize && array[right] > array[largest]) largest = right;
+
+                heapJ = largest;
+
+                // If a swap is needed, perform and continue heapifying this subtree later
+                if (largest != heapI) {
+                    std::swap(array[heapI], array[largest]);
+                    heapStack.push(largest); // continue down this subtree
+                    appendLog(QString("Heapify swap at %1 with %2").arg(heapI).arg(largest));
+                } else {
+                    appendLog(QString("Heapify compare at %1 (no swap)").arg(heapI));
+                }
+
+                // Live repaint and record frame
+                highlightComparison(heapI, heapJ, -1);
+
+                pushFrame(array, heapI, heapJ, -1);
+
+                if (stepMode) { timer->stop(); return; }
+                return;
+            } else {
+                // Transition to extraction
+                heapBuilding = false;
+                heapSwapping = true;
+                appendLog("Max-heap built. Starting extraction.");
+                return;
+            }
+        }
+
+        // Phase 2: Extract max and re-heapify
+        if (heapSwapping) {
+            // Extraction step: place current max at the end of the heap
+            if (heapStack.empty() && heapSize > 1) {
+                // Swap root with last element of active heap
+                std::swap(array[0], array[heapSize - 1]);
+                sortedIndices.insert(heapSize - 1);
+
+                // Shrink heap and prepare re-heapify from root
+                heapSize--;
+                heapStack.push(0);
+
+                heapI = 0;
+                heapJ = heapSize; // visual anchor to the shrinking boundary
+
+                // Visualize extraction
+                highlightComparison(0, heapSize, -1);
+
+                appendLog(QString("Extracted max to index %1; heapSize=%2").arg(heapSize).arg(heapSize));
+
+                // Record this step
+                pushFrame(array, heapI, heapJ, -1);
+
+                if (stepMode) { timer->stop(); return; }
+                return;
+            }
+
+            // Re-heapify one node per tick
+            if (!heapStack.empty()) {
+                heapI = heapStack.top(); heapStack.pop();
+
+                int largest = heapI;
+                int left = 2 * heapI + 1;
+                int right = 2 * heapI + 2;
+
+                if (left  < heapSize && array[left]  > array[largest]) largest = left;
+                if (right < heapSize && array[right] > array[largest]) largest = right;
+
+                heapJ = largest;
+
+                if (largest != heapI) {
+                    std::swap(array[heapI], array[largest]);
+                    heapStack.push(largest); // continue down the subtree
+                    appendLog(QString("Re-heapify swap at %1 with %2").arg(heapI).arg(largest));
+                } else {
+                    appendLog(QString("Re-heapify compare at %1 (no swap)").arg(heapI));
+                }
+                highlightComparison(heapI, largest, -1);
+
+                pushFrame(array, heapI, heapJ, -1);
+
+                if (stepMode) { timer->stop(); return; }
+                return;
+            }
+
+            // Finalization when heap reduced to 0 or 1
+            if (heapSize <= 1 && heapStack.empty()) {
+                if (heapSize == 1) {
+                    sortedIndices.insert(0);
+                    heapSize = 0;
+                }
+
+                appendLog("Heap Sort complete.");
+                pushFrame(array, -1, -1, -1);
+
+                highlightComparison(-1, -1, -1);
+                drawArrayFinished(array);
+                if (timer) timer->stop();
+                return;
+            }
+        }
     }
-    //MERGE SORT ALGORITHM ENDS HERE
 }
+
 
 void MainWindow::updateScene() {
     scene->clear();
@@ -866,47 +1079,88 @@ void MainWindow::drawArrayFinished(const std::vector<int>& arr){
     }
 }
 
-void MainWindow::highlightComparison(int index1, int index2, int pivotIndex =  -1){
+void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* = -1 */) {
     scene->clear();
 
-    if(array.empty()) return;
+    if (array.empty()) return;
 
     int maxVal = *std::max_element(array.begin(), array.end());
     int maxBarHeight = 150;
-
     int x = 10;
 
-    for(int k = 0; k < array.size(); ++k){
+    for (int k = 0; k < array.size(); ++k) {
         int barHeight = (maxVal > 0) ? (array[k] * maxBarHeight / maxVal) : 0;
-        QColor color = Qt::blue;
 
+        // Neutral base color for all bars
+        QColor color = QColor(200, 200, 200); // light gray
+
+        // --- Merge Sort ---
         if (currentAlgorithm == SortAlgorithm::Merge) {
             if (k >= mergeLeftStart && k <= mergeLeftEnd)
-                color = QColor(0, 255, 255); // Neon Blue – Left Half
+                color = QColor(0, 255, 255);   // Cyan – Left Half
             else if (k >= mergeRightStart && k <= mergeRightEnd)
-                color = QColor(255, 20, 147); // Neon Pink – Right Half
+                color = QColor(255, 20, 147);  // DeepPink – Right Half
             else if (k >= mergeMergedStart && k <= mergeMergedEnd)
-                color = QColor(0, 255, 0); // Neon Green – Merged Output
+                color = QColor(0, 255, 0);     // Lime – Merged Output
         }
 
-        if (k == pivotIndex && pivotIndex >= 0) {
-            color = QColor(186, 85, 211); // Bright Purple – Pivot
-        } else if ((k == index1 || k == index2)) {
-            color = QColor(255, 165, 0); // Bright Orange – Comparison
-        } else if (sortedIndices.contains(k)) {
-            color = QColor(255, 255, 0); // Bright Yellow – Sorted
+        // --- Quick Sort ---
+        if (currentAlgorithm == SortAlgorithm::Quick) {
+            if (k == pivotIndex && pivotIndex >= 0)
+                color = QColor(186, 85, 211);  // MediumOrchid – Pivot
+            else if (k == index1 || k == index2)
+                color = QColor(30, 144, 255);  // DodgerBlue – Comparing
+            else if (sortedIndices.contains(k))
+                color = QColor(0, 255, 0);   // Gold – Sorted
         }
 
-        // qDebug() << "Highlighting: index1=" << index1
-        //          << " index2=" << index2
-        //          << " pivotIndex=" << pivotIndex;
+        // --- Heap Sort ---
+        if (currentAlgorithm == SortAlgorithm::Heap) {
+            if (k == index1)
+                color = QColor(255, 165, 0);   // Orange – Heapify Comparison
+            else if (k == index2)
+                color = QColor(255, 0, 0);     // Red – Extraction Swap
+            else if (sortedIndices.contains(k))
+                color = QColor(0, 255, 0);     // Green – Sorted Element
+        }
 
+        // --- Bubble Sort ---
+        if (currentAlgorithm == SortAlgorithm::Bubble) {
+            if (k == index1 || k == index2)
+                color = QColor(220, 20, 60);   // Crimson – Current Comparison
+            else if (sortedIndices.contains(k))
+                color = QColor(0, 255, 0);   // ForestGreen – Sorted Tail
+        }
+
+        // --- Insertion Sort ---
+        if (currentAlgorithm == SortAlgorithm::Insertion) {
+            if (k == index1)
+                color = QColor(65, 105, 225);  // RoyalBlue – Key Element
+            else if (k == index2)
+                color = QColor(255, 165, 0);   // Orange – Comparing Position
+            else if (sortedIndices.contains(k))
+                color = QColor(0, 255, 0);     // Green – Inserted/Sorted
+        }
+
+        // --- Selection Sort ---
+        if (currentAlgorithm == SortAlgorithm::Selection) {
+            if (k == index1)
+                color = QColor(128, 0, 128);   // Purple – Current Minimum
+            else if (k == index2)
+                color = QColor(255, 0, 0);     // Red – Comparing
+            else if (sortedIndices.contains(k))
+                color = QColor(0, 255, 0);     // Green – Sorted Prefix
+        }
+
+        // Draw bar
         scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(color));
 
+        // Draw value text
         QGraphicsTextItem* text = scene->addText(QString::number(array[k]));
         text->setPos(x, 200 + 5);
         x += 30;
     }
+
 }
 
 MainWindow::~MainWindow()
