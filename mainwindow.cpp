@@ -17,7 +17,6 @@ MainWindow::MainWindow(QWidget *parent)
     QWidget* central = new QWidget(this);
     QVBoxLayout* layout = new QVBoxLayout(central);
 
-
     // Core widgets
     algorithmBox = new QComboBox();
     algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort"});
@@ -51,6 +50,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     descriptionLabel = new QLabel();
     descriptionLabel->setWordWrap(true);
+
+    descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted."); //DEFAULT STARTING ALGORITHM
 
     slider = new QSlider(Qt::Horizontal);
     slider->setMinimum(0);
@@ -97,6 +98,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     legendContainer->addWidget(legendTitleLabel);
     legendContainer->addLayout(legendLayout);
+
 
     QWidget* legendWidget = new QWidget();
     legendWidget->setLayout(legendContainer);
@@ -152,56 +154,64 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Heapify Comparison"));
         legendLayout->addWidget(makeLegendItem("red", "Extraction Swap"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Element"));
+        descriptionLabel->setText("Heap Sort – An in-place, comparison-based algorithm that builds a binary heap and repeatedly extracts the maximum for O(n log n) performance.");
     }
     else if (selected == "Quick Sort") {
         legendTitleLabel->setText("Legend — Quick Sort");
         legendLayout->addWidget(makeLegendItem("mediumorchid", "Pivot"));
         legendLayout->addWidget(makeLegendItem("dodgerblue", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Quick Sort - Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
     }
     else if (selected == "Merge Sort") {
         legendTitleLabel->setText("Legend — Merge Sort");
         legendLayout->addWidget(makeLegendItem("cyan", "Left Half"));
         legendLayout->addWidget(makeLegendItem("deeppink", "Right Half"));
         legendLayout->addWidget(makeLegendItem("green", "Merged Output"));
+        descriptionLabel->setText("Merge Sort – A stable, divide-and-conquer algorithm that recursively splits and merges arrays for guaranteed O(n log n) performance.");
     }
     else if (selected == "Bubble Sort") {
         legendTitleLabel->setText("Legend — Bubble Sort");
         legendLayout->addWidget(makeLegendItem("crimson", "Current Comparison"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Tail"));
+        descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted.");
     }
     else if (selected == "Insertion Sort") {
         legendTitleLabel->setText("Legend — Insertion Sort");
         legendLayout->addWidget(makeLegendItem("royalblue", "Key Element"));
         legendLayout->addWidget(makeLegendItem("orange", "Comparing Position"));
         legendLayout->addWidget(makeLegendItem("green", "Inserted / Sorted"));
+        descriptionLabel->setText("Insertion Sort - Builds the sorted array one item at a time. Fast on nearly sorted data.");
     }
     else if (selected == "Selection Sort") {
         legendTitleLabel->setText("Legend — Selection Sort");
         legendLayout->addWidget(makeLegendItem("purple", "Current Minimum"));
         legendLayout->addWidget(makeLegendItem("red", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Prefix"));
+        descriptionLabel->setText("Selection Sort - Finds the minimum and places it. Easy to understand, but always O(n²).");
     }
     else if (selected == "Shell Sort") {
         legendTitleLabel->setText("Legend — Shell Sort");
         legendLayout->addWidget(makeLegendItem("royalblue", "Key Element"));
         legendLayout->addWidget(makeLegendItem("orange", "Gap Comparison"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted / Final"));
+        descriptionLabel->setText("Shell Sort – An adaptive, gap-based algorithm that generalizes insertion sort for faster O(n log² n) performance.");
     }
     else if (selected == "Tim Sort") {
         legendTitleLabel->setText("Legend — TimSort");
         legendLayout->addWidget(makeLegendItem("royalblue", "Key Element (Insertion in runs)"));
         legendLayout->addWidget(makeLegendItem("orange", "Comparison (Insertion/Merge)"));
         legendLayout->addWidget(makeLegendItem("green", "Placed / Sorted"));
+        descriptionLabel->setText("TimSort – A hybrid, stable algorithm that blends merge sort and insertion sort for adaptive O(n log n) performance.");
     }
 
 }
-
+//Generate 20 random numbers(1 to 100)
 void MainWindow::onRandomClicked(){
     array.clear();
     QStringList numbers;
 
-    //Generate 20 random numbers(1 to 100)
+
     for(int i = 0; i < 20; i++){
         int num = QRandomGenerator::global()->bounded(1, 101);
         array.push_back(num);
@@ -222,7 +232,6 @@ void MainWindow::onSliderMoved(int value) {
     drawArray(array);
     currentStep = value;
 
-    // Restore Quick Sort metadata safely
     if (currentAlgorithm == SortAlgorithm::Quick) {
         if (value < pivotHistory.size() &&
             value < iHistory.size() &&
@@ -240,7 +249,6 @@ void MainWindow::onSliderMoved(int value) {
         if (value >= 0 && value < history.size()) {
             array = history[value];
 
-            // Restore merge zone history if you're scrubbing Merge Sort
             if (currentAlgorithm == SortAlgorithm::Merge && value < mergeLeftStartHistory.size()) {
                 mergeLeftStart = mergeLeftStartHistory[value];
                 mergeLeftEnd = mergeLeftEndHistory[value];
@@ -265,9 +273,6 @@ void MainWindow::onSliderMoved(int value) {
         }
     }
 
-
-
-    // Optional: update step label
      stepLabel->setText(QString("Step %1 / %2").arg(value).arg(history.size() - 1));
 }
 
@@ -318,7 +323,6 @@ void MainWindow::onStartClicked() {
     slider->setMaximum(0);
     currentStep = 0;
 
-    // Parse input
     array.clear();
     QStringList numberStrings = inputField->text().split(" ", Qt::SkipEmptyParts);
     for (const QString& numStr : numberStrings) {
@@ -336,37 +340,66 @@ void MainWindow::onStartClicked() {
         return;
     }
 
-    // Reset log
     logView->clear();
     appendLog("Input: " + inputField->text());
 
-    // Algorithm selection
     if (selected == "Bubble Sort") {
         currentAlgorithm = SortAlgorithm::Bubble;
+
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
         i = 0; j = 0;
-        descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted.");
+
         appendLog("Starting Bubble Sort.");
     }
     else if (selected == "Insertion Sort") {
         currentAlgorithm = SortAlgorithm::Insertion;
         i = 1; j = 0; key = 0; inserting = false;
-        descriptionLabel->setText("Insertion Sort - Builds the sorted array one item at a time. Fast on nearly sorted data.");
+
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
         appendLog("Starting Insertion Sort.");
     }
     else if (selected == "Selection Sort") {
         currentAlgorithm = SortAlgorithm::Selection;
         i = 0; j = 0; minIndex = 0;
-        descriptionLabel->setText("Selection Sort - Finds the minimum and places it. Easy to understand, but always O(n²).");
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
+        pushFrame(array, -1, -1, -1);
+        appendLog("Selection Sort starting.");
+
+        if (timer && !timer->isActive())
+            timer->start(delayBox->value());
+
         appendLog("Starting Selection Sort.");
     }
     else if (selected == "Quick Sort") {
         currentAlgorithm = SortAlgorithm::Quick;
+
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
         quickStack.clear();
         if (!array.empty()) {
             quickStack.push({0, static_cast<int>(array.size() - 1)});
         }
+
         quickI = quickJ = quickPivot = -1;
-        descriptionLabel->setText("Quick Sort - Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
         appendLog("Starting Quick Sort.");
     }
     else if (selected == "Merge Sort"){
@@ -376,13 +409,19 @@ void MainWindow::onStartClicked() {
         mergeStack.push({0, static_cast<int>(array.size() - 1), false}); // false = split phase
         merging = false;
 
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
         mergeLeft = mergeMid = mergeRight = -1;
         mergeI = mergeJ = mergeK = -1;
 
         mergeLeftStart = mergeLeftEnd = -1;
         mergeRightStart = mergeRightEnd = -1;
         mergeMergedStart = mergeMergedEnd = -1;
-        descriptionLabel->setText("Merge Sort – A stable, divide-and-conquer algorithm that recursively splits and merges arrays for guaranteed O(n log n) performance.");
+
         appendLog("Starting Merge Sort...");
     }
     else if (selected == "Heap Sort") {
@@ -402,9 +441,6 @@ void MainWindow::onStartClicked() {
         jHistory.clear();
         pivotHistory.clear();
 
-        // Push all non-leaf nodes for initial heapify (bottom-up).
-        // Push in increasing order so the stack pops the highest index first
-        // (i.e. process the deepest non-leaf nodes before the root).
         int lastNonLeaf = heapSize / 2 - 1;
         for (int k = 0; k <= lastNonLeaf; ++k) {
             heapStack.push(k);
@@ -419,49 +455,38 @@ void MainWindow::onStartClicked() {
     else if (selected == "Shell Sort") {
         currentAlgorithm = SortAlgorithm::Shell;
 
-        // Reset Shell state
         gap = array.size() / 2;
         shellI = gap;
         shellInserting = false;
 
-        // Clear visualization state
         sortedIndices.clear();
         history.clear();
         iHistory.clear();
         jHistory.clear();
         pivotHistory.clear();
 
-        // Push initial frame
         pushFrame(array, -1, -1, -1);
 
-        // Log start
         appendLog(QString("Shell Sort starting. gap=%1").arg(gap));
 
-        // Start timer
         if (timer && !timer->isActive()) timer->start(delayBox->value());
     }
     else if (selected == "TimSort") {
         currentAlgorithm = SortAlgorithm::Tim;
 
-        // Typical TimSort min run size; you can tune this
         timRunSize = 32;
 
-        // Reset stacks and flags
         timRuns.clear();
         timInserting = true;
         timMerging = false;
 
-        // Detect runs across the entire array in fixed chunks for visualization
-        // (You can improve to detect natural runs later)
         timStart = 0;
         timEnd   = std::min(timStart + timRunSize, (int)array.size());
 
-        // Prepare insertion sort indices for the first run
         timI   = timStart + 1;
         timJ   = timI;
         timKey = (timI < timEnd) ? array[timI] : 0;
 
-        // Visualization resets
         sortedIndices.clear();
         history.clear();
         iHistory.clear();
@@ -469,12 +494,13 @@ void MainWindow::onStartClicked() {
         pivotHistory.clear();
 
         pushFrame(array, -1, -1, -1);
+
         appendLog(QString("TimSort starting. runSize=%1").arg(timRunSize));
 
         if (timer && !timer->isActive())
             timer->start(delayBox->value());
     }
-    // Draw initial array
+
     drawArray(array);
 
     // Timer logic
@@ -542,9 +568,6 @@ void MainWindow::onTimerTick(){
             highlightComparison(-1, -1, -1);
 
             drawArrayFinished(array);
-
-
-
         }
 
     }
@@ -554,9 +577,6 @@ void MainWindow::onTimerTick(){
     else if(currentAlgorithm == SortAlgorithm::Insertion){
         if (i < static_cast<int>(array.size())) {
             if (!inserting) {
-
-
-
                 key = array[i];
                 j = i - 1;
                 inserting = true;
@@ -597,7 +617,6 @@ void MainWindow::onTimerTick(){
                     appendLog(QString("Inserting key %1 at index %2").arg(key).arg(j + 1));
                     appendLog(stepLabel->text());
 
-                    sortedIndices.insert(j + 1);
                     highlightComparison(j + 1, -1, -1);
 
                     i++;
@@ -609,16 +628,18 @@ void MainWindow::onTimerTick(){
                     return;
                 }
             }
-
-            //INSERTION ALGORITHM ENDS HERE
-
-
         } else {
             timer->stop();
             appendLog("Insertion Sort complete.");
             appendLog("Array is sorted.");
+
+            for (int k = 0; k < array.size(); ++k){
+                sortedIndices.insert(k);
+            }
+            highlightComparison(-1, -1, -1);
+
             drawArrayFinished(array);
-        }
+        }//INSERTION ALGORITHM ENDS HERE
 
     }
 
@@ -770,6 +791,9 @@ void MainWindow::onTimerTick(){
             timer->stop();
             appendLog("Quick Sort complete.");
             appendLog("Array is sorted.");
+            for (int k = 0; k < array.size(); ++k) sortedIndices.insert(k);
+            highlightComparison(-1, -1, -1);
+
             drawArrayFinished(array);
         }
     }
@@ -811,7 +835,6 @@ void MainWindow::onTimerTick(){
                     return;
                 }
 
-                // Initialize merge phase
                 if (left >= right) {
                     // Skip invalid merge
                     return;
@@ -825,7 +848,6 @@ void MainWindow::onTimerTick(){
                 mergeK = mergeLeft;
                 merging = true;
 
-                // Set merge zone ranges
                 mergeLeftStart = mergeLeft;
                 mergeLeftEnd = mergeMid;
                 mergeRightStart = mergeMid + 1;
@@ -950,8 +972,10 @@ void MainWindow::onTimerTick(){
             }
         }
     }    //MERGE SORT ALGORITHM ENDS HERE
+
+        //HEAP SORT ALGORITHM STARTS HERE
+
     else if (currentAlgorithm == SortAlgorithm::Heap) {
-        // Phase 1: Build max-heap incrementally (bottom-up)
         if (heapBuilding) {
             if (!heapStack.empty()) {
                 heapI = heapStack.top(); heapStack.pop();
@@ -965,10 +989,9 @@ void MainWindow::onTimerTick(){
 
                 heapJ = largest;
 
-                // If a swap is needed, perform and continue heapifying this subtree later
                 if (largest != heapI) {
                     std::swap(array[heapI], array[largest]);
-                    heapStack.push(largest); // continue down this subtree
+                    heapStack.push(largest);
                     appendLog(QString("Heapify swap at %1 with %2").arg(heapI).arg(largest));
                 } else {
                     appendLog(QString("Heapify compare at %1 (no swap)").arg(heapI));
@@ -990,20 +1013,17 @@ void MainWindow::onTimerTick(){
             }
         }
 
-        // Phase 2: Extract max and re-heapify
         if (heapSwapping) {
-            // Extraction step: place current max at the end of the heap
             if (heapStack.empty() && heapSize > 1) {
-                // Swap root with last element of active heap
+
                 std::swap(array[0], array[heapSize - 1]);
                 sortedIndices.insert(heapSize - 1);
 
-                // Shrink heap and prepare re-heapify from root
                 heapSize--;
                 heapStack.push(0);
 
                 heapI = 0;
-                heapJ = heapSize; // visual anchor to the shrinking boundary
+                heapJ = heapSize;
 
                 // Visualize extraction
                 highlightComparison(0, heapSize, -1);
@@ -1032,7 +1052,7 @@ void MainWindow::onTimerTick(){
 
                 if (largest != heapI) {
                     std::swap(array[heapI], array[largest]);
-                    heapStack.push(largest); // continue down the subtree
+                    heapStack.push(largest);
                     appendLog(QString("Re-heapify swap at %1 with %2").arg(heapI).arg(largest));
                 } else {
                     appendLog(QString("Re-heapify compare at %1 (no swap)").arg(heapI));
@@ -1065,7 +1085,6 @@ void MainWindow::onTimerTick(){
     else if (currentAlgorithm == SortAlgorithm::Shell) {
         if (gap > 0) {
             if (shellI < static_cast<int>(array.size())) {
-                // If we haven't picked up a key yet
                 if (!shellInserting) {
                     shellKey = array[shellI];
                     shellJ = shellI;
@@ -1073,12 +1092,10 @@ void MainWindow::onTimerTick(){
 
                     appendLog(QString("Taking key = %1 at index %2").arg(shellKey).arg(shellI));
 
-                    // Highlight key element (blue)
                     highlightComparison(shellI, -1, -1);
                     return;
                 }
 
-                // While shifting elements across the gap
                 if (shellJ >= gap && array[shellJ - gap] > shellKey) {
                     appendLog(QString("Gap %1: shifting %2 right").arg(gap).arg(array[shellJ - gap]));
                     array[shellJ] = array[shellJ - gap];
@@ -1089,28 +1106,25 @@ void MainWindow::onTimerTick(){
                     slider->setMaximum(currentStep);
                     slider->setValue(currentStep);
 
-                    // Highlight gap comparison (orange)
                     highlightComparison(shellJ, shellJ + gap, -1);
                     return;
                 } else {
-                    // Place the key in its final position
                     array[shellJ] = shellKey;
                     appendLog(QString("Inserted %1 at index %2").arg(shellKey).arg(shellJ));
 
-                    sortedIndices.insert(shellJ);   // mark as sorted only now
-                    shellInserting = false;         // key is placed
+                    sortedIndices.insert(shellJ);
+                    shellInserting = false;
 
-                    // Highlight inserted element (green)
+
                     highlightComparison(shellJ, -1, -1);
 
-                    shellI++; // move to next element
+                    shellI++;
                 }
             } else {
-                gap /= 2;   // shrink gap
-                shellI = gap; // reset index
+                gap /= 2;
+                shellI = gap;
             }
         } else {
-            // Sorting complete
             timer->stop();
             appendLog("Shell Sort complete.");
             for (int k = 0; k < array.size(); ++k) sortedIndices.insert(k);
@@ -1119,92 +1133,17 @@ void MainWindow::onTimerTick(){
             shellJ = -1;
             shellInserting = false;
 
-            highlightComparison(-1, -1, -1); // sweep all green
+            highlightComparison(-1, -1, -1);
         }
     }
+        //HEAP SORT ALGORITHM ENDS HERE
+
+
+        //TIM SORT ALGORITHM STARTS HERE
     else if (currentAlgorithm == SortAlgorithm::Tim) {
         if (timInserting) {
-            if (timI < timRunSize && timI < (int)array.size()) {
-                if (timJ > 0 && array[timJ - 1] > timKey) {
-                    array[timJ] = array[timJ - 1];
-                    timJ--;
-
-                    history.push_back(array);
-                    currentStep = (int)history.size() - 1;
-                    slider->setMaximum(currentStep);
-                    slider->setValue(currentStep);
-
-                    highlightComparison(timJ, timJ+1, -1); // orange
-                    return;
-                } else {
-                    array[timJ] = timKey;
-                    sortedIndices.insert(timJ);
-                    highlightComparison(timJ, -1, -1); // green
-
-                    timI++;
-                    timJ = timI;
-                    if (timI < (int)array.size())
-                        timKey = array[timI];
-                }
-            } else {
-                // Finished one run
-                timRuns.push_back({0, std::min(timRunSize,(int)array.size())});
-                timInserting = false;
-                timMerging = true;
-                timLeft = timRuns.back().first;
-                timRight = timRuns.back().second;
-                appendLog("Insertion phase complete. Starting merge phase.");
-            }}
-            else if (timMerging) {
-                if (timRuns.size() > 1) {
-                    auto rightRun = timRuns.back(); timRuns.pop_back();
-                    auto leftRun = timRuns.back(); timRuns.pop_back();
-
-                    timLeft = leftRun.first;
-                    timMid  = leftRun.second;
-                    timRight= rightRun.second;
-
-                    timMergeBuffer.assign(array.begin()+timLeft, array.begin()+timMid);
-
-                    int i = 0, j = timMid, k = timLeft;
-                    while (i < (int)timMergeBuffer.size() && j < timRight) {
-                        if (timMergeBuffer[i] <= array[j]) {
-                            array[k++] = timMergeBuffer[i++];
-                        } else {
-                            array[k++] = array[j++];
-                        }
-                        history.push_back(array);
-                        currentStep = (int)history.size() - 1;
-                        slider->setMaximum(currentStep);
-                        slider->setValue(currentStep);
-
-                        highlightComparison(i+timLeft, j, -1); // orange
-                        if (stepMode) { timer->stop(); return; }
-                    }
-                    while (i < (int)timMergeBuffer.size()) {
-                        array[k++] = timMergeBuffer[i++];
-                    }
-
-                    timRuns.push_back({timLeft, timRight});
-                } else {
-                    timer->stop();
-                    appendLog("TimSort complete.");
-                    for (int k = 0; k < array.size(); ++k) sortedIndices.insert(k);
-                    highlightComparison(-1, -1, -1); // sweep all green
-                    timMerging = false;
-                }
-            }
-        }
-    else if (currentAlgorithm == SortAlgorithm::Tim) {
-
-        // Phase 1: Insertion sort each run [timStart, timEnd)
-        if (timInserting) {
-            // If current run exists
             if (timStart < (int)array.size()) {
-
-                // If we still have elements to insert in this run
                 if (timI < timEnd) {
-                    // While shifting: compare with previous element inside run
                     if (timJ > timStart && array[timJ - 1] > timKey) {
                         array[timJ] = array[timJ - 1];
                         timJ--;
@@ -1214,44 +1153,44 @@ void MainWindow::onTimerTick(){
                         slider->setMaximum(currentStep);
                         slider->setValue(currentStep);
 
-                        // Orange comparison between timJ and timJ+1
+
                         highlightComparison(timJ, timJ + 1, -1);
                         if (stepMode) { timer->stop(); return; }
-                        return; // continue shifting on next tick
+                        return;
                     } else {
-                        // Place the key
+
                         array[timJ] = timKey;
 
-                        // Mark the placed index green for clarity
+
                         sortedIndices.insert(timJ);
                         highlightComparison(timJ, -1, -1);
 
-                        // Advance to next element in the run
+
                         timI++;
                         timJ = timI;
 
                         if (timI < timEnd) {
                             timKey = array[timI];
-                            // Show blue key
+
                             highlightComparison(timI, -1, -1);
                         } else {
-                            // Finished sorting this run; push it to the run stack
+
                             timRuns.push_back({timStart, timEnd});
                             appendLog(QString("Run sorted: [%1, %2)").arg(timStart).arg(timEnd));
 
-                            // Move to next run
+
                             timStart = timEnd;
                             timEnd   = std::min(timStart + timRunSize, (int)array.size());
 
                             if (timStart < (int)array.size()) {
-                                // Prepare insertion indices for next run
+
                                 timI   = timStart + 1;
                                 timJ   = timI;
                                 timKey = (timI < timEnd) ? array[timI] : 0;
-                                // Show blue key at new run start
+
                                 highlightComparison(timI, -1, -1);
                             } else {
-                                // No more runs to sort; switch to merge phase
+
                                 timInserting = false;
                                 timMerging   = true;
                                 appendLog("All runs sorted. Starting merge phase.");
@@ -1259,7 +1198,7 @@ void MainWindow::onTimerTick(){
                         }
                     }
                 } else {
-                    // Handle single-element or empty run; push and advance
+
                     timRuns.push_back({timStart, timEnd});
                     appendLog(QString("Run sorted: [%1, %2)").arg(timStart).arg(timEnd));
 
@@ -1278,16 +1217,16 @@ void MainWindow::onTimerTick(){
                     }
                 }
             } else {
-                // No runs at all (empty array)
+
                 timInserting = false;
                 timMerging   = true;
             }
         }
 
-        // Phase 2: Merge runs from stack until one remains
+
         else if (timMerging) {
             if (timRuns.size() > 1) {
-                // Pop adjacent runs (left, then right)
+
                 auto rightRun = timRuns.back(); timRuns.pop_back();
                 auto leftRun  = timRuns.back(); timRuns.pop_back();
 
@@ -1295,14 +1234,12 @@ void MainWindow::onTimerTick(){
                 timMid   = leftRun.second;
                 timRight = rightRun.second;
 
-                // Buffer left run
                 timMergeBuffer.assign(array.begin() + timLeft, array.begin() + timMid);
 
-                int i = 0;          // index into buffer
-                int j = timMid;     // index into right run
-                int k = timLeft;    // write position in array
+                int i = 0;
+                int j = timMid;
+                int k = timLeft;
 
-                // Merge with visualization
                 while (i < (int)timMergeBuffer.size() && j < timRight) {
                     if (timMergeBuffer[i] <= array[j]) {
                         array[k++] = timMergeBuffer[i++];
@@ -1310,36 +1247,32 @@ void MainWindow::onTimerTick(){
                         array[k++] = array[j++];
                     }
 
-                    // Update frame
                     history.push_back(array);
                     currentStep = (int)history.size() - 1;
                     slider->setMaximum(currentStep);
                     slider->setValue(currentStep);
 
-                    // Orange comparison: boundary indices
+
                     highlightComparison(i + timLeft, j, -1);
                     if (stepMode) { timer->stop(); return; }
-                    return; // continue merging on next tick
+                    return;
                 }
 
-                // Copy remaining left buffer (right run remainder already in place)
                 while (i < (int)timMergeBuffer.size()) {
                     array[k++] = timMergeBuffer[i++];
                 }
 
-                // Optional: mark merged range green for a moment (cinematic)
                 for (int idx = timLeft; idx < timRight; ++idx)
                     sortedIndices.insert(idx);
 
-                // Push merged run back
                 timRuns.push_back({timLeft, timRight});
                 appendLog(QString("Merged runs into [%1, %2)").arg(timLeft).arg(timRight));
             } else {
-                // All merged: complete
                 timer->stop();
+
                 appendLog("TimSort complete.");
                 for (int k = 0; k < (int)array.size(); ++k) sortedIndices.insert(k);
-                highlightComparison(-1, -1, -1); // final sweep
+                highlightComparison(-1, -1, -1);
                 timMerging = false;
             }
         }
@@ -1445,7 +1378,6 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
         // Neutral base color for all bars
         QColor color = QColor(200, 200, 200);
 
-        // --- Merge Sort ---
         if (currentAlgorithm == SortAlgorithm::Merge) {
             if (k >= mergeLeftStart && k <= mergeLeftEnd)
                 color = QColor(0, 255, 255);
@@ -1455,7 +1387,6 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(0, 255, 0);
         }
 
-        // --- Quick Sort ---
         if (currentAlgorithm == SortAlgorithm::Quick) {
             if (k == pivotIndex && pivotIndex >= 0)
                 color = QColor(186, 85, 211);
@@ -1465,7 +1396,6 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(0, 255, 0);
         }
 
-        // --- Heap Sort ---
         if (currentAlgorithm == SortAlgorithm::Heap) {
             if (k == index1)
                 color = QColor(255, 165, 0);
@@ -1475,7 +1405,6 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(0, 255, 0);
         }
 
-        // --- Bubble Sort ---
         if (currentAlgorithm == SortAlgorithm::Bubble) {
             if (k == index1 || k == index2)
                 color = QColor(220, 20, 60);
@@ -1483,7 +1412,6 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(0, 255, 0);
         }
 
-        // --- Insertion Sort ---
         if (currentAlgorithm == SortAlgorithm::Insertion) {
             if (k == index1)
                 color = QColor(65, 105, 225);
@@ -1493,7 +1421,6 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(0, 255, 0);
         }
 
-        // --- Selection Sort ---
         if (currentAlgorithm == SortAlgorithm::Selection) {
             if (k == index1)
                 color = QColor(128, 0, 128);
@@ -1504,20 +1431,20 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
         }
         if (currentAlgorithm == SortAlgorithm::Shell) {
             if (shellInserting && k == shellI)
-                color = QColor(65, 105, 225);  // RoyalBlue – key element
+                color = QColor(65, 105, 225);
             else if (shellInserting && (k == shellJ || k == shellJ + gap))
-                color = QColor(255, 165, 0);   // Orange – gap comparison
+                color = QColor(255, 165, 0);
             else if (sortedIndices.contains(k))
-                color = QColor(0, 255, 0);     // Green – sorted
+                color = QColor(0, 255, 0);
         }
         if (currentAlgorithm == SortAlgorithm::Tim) {
             if (timInserting && k == timI)
-                color = QColor(65, 105, 225); // RoyalBlue – Key
+                color = QColor(65, 105, 225);
             else if ((timInserting && (k == timJ || k == timJ+1)) ||
                      (timMerging && (k == timLeft || k == timMid)))
-                color = QColor(255, 165, 0);  // Orange – Comparison
+                color = QColor(255, 165, 0);
             else if (sortedIndices.contains(k))
-                color = QColor(0, 255, 0);    // Green – Sorted
+                color = QColor(0, 255, 0);
         }
 
         // Draw bar

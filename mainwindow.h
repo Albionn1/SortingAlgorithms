@@ -46,7 +46,7 @@ private slots:
 private:
 
     enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim};
-    SortAlgorithm currentAlgorithm;
+    SortAlgorithm currentAlgorithm = SortAlgorithm::Bubble; // default
 
     //Sorting state
     int i = 0, j = 0, key = 0, minIndex =0;
