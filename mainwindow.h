@@ -45,7 +45,7 @@ private slots:
 
 private:
 
-    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap};
+    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell};
     SortAlgorithm currentAlgorithm;
 
     //Sorting state
@@ -76,6 +76,13 @@ private:
     std::stack<int> heapStack;
     int heapI = -1;
     int heapJ = -1;
+
+    int gap;
+    int shellI;
+    int shellJ;
+    int shellKey;
+    bool shellInserting;
+
 
     inline void pushFrame(const std::vector<int>& arr, int i, int j, int pivot = -1) {
         history.push_back(arr);

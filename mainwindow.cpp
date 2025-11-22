@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Core widgets
     algorithmBox = new QComboBox();
-    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort"});
+    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort"});
 
     startButton = new QPushButton("Start Sort");
     resetButton = new QPushButton("Reset to Default");
@@ -182,6 +182,13 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("red", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Prefix"));
     }
+    else if (selected == "Shell Sort") {
+        legendTitleLabel->setText("Legend — Shell Sort");
+        legendLayout->addWidget(makeLegendItem("royalblue", "Key Element"));
+        legendLayout->addWidget(makeLegendItem("orange", "Gap Comparison"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted / Final"));
+    }
+
 }
 
 void MainWindow::onRandomClicked(){
@@ -391,20 +398,43 @@ void MainWindow::onStartClicked() {
 
         // Push all non-leaf nodes for initial heapify (bottom-up).
         // Push in increasing order so the stack pops the highest index first
-        // (i.e. we process the deepest non-leaf nodes before the root).
+        // (i.e. process the deepest non-leaf nodes before the root).
         int lastNonLeaf = heapSize / 2 - 1;
         for (int k = 0; k <= lastNonLeaf; ++k) {
             heapStack.push(k);
         }
 
-        // Initial frame
         pushFrame(array, -1, -1, -1);
 
         appendLog(QString("Heap Sort starting. heapSize=%1").arg(heapSize));
 
-        // Start timer using the configured delay
         if (timer && !timer->isActive()) timer->start(delayBox->value());
     }
+    else if (selected == "Shell Sort") {
+        currentAlgorithm = SortAlgorithm::Shell;
+
+        // Reset Shell state
+        gap = array.size() / 2;
+        shellI = gap;
+        shellInserting = false;
+
+        // Clear visualization state
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
+        // Push initial frame
+        pushFrame(array, -1, -1, -1);
+
+        // Log start
+        appendLog(QString("Shell Sort starting. gap=%1").arg(gap));
+
+        // Start timer
+        if (timer && !timer->isActive()) timer->start(delayBox->value());
+    }
+
 
     // Draw initial array
     drawArray(array);
@@ -994,6 +1024,66 @@ void MainWindow::onTimerTick(){
             }
         }
     }
+    else if (currentAlgorithm == SortAlgorithm::Shell) {
+        if (gap > 0) {
+            if (shellI < static_cast<int>(array.size())) {
+                // If we haven't picked up a key yet
+                if (!shellInserting) {
+                    shellKey = array[shellI];
+                    shellJ = shellI;
+                    shellInserting = true;
+
+                    appendLog(QString("Taking key = %1 at index %2").arg(shellKey).arg(shellI));
+
+                    // Highlight key element (blue)
+                    highlightComparison(shellI, -1, -1);
+                    return;
+                }
+
+                // While shifting elements across the gap
+                if (shellJ >= gap && array[shellJ - gap] > shellKey) {
+                    appendLog(QString("Gap %1: shifting %2 right").arg(gap).arg(array[shellJ - gap]));
+                    array[shellJ] = array[shellJ - gap];
+                    shellJ -= gap;
+
+                    history.push_back(array);
+                    currentStep = static_cast<int>(history.size()) - 1;
+                    slider->setMaximum(currentStep);
+                    slider->setValue(currentStep);
+
+                    // Highlight gap comparison (orange)
+                    highlightComparison(shellJ, shellJ + gap, -1);
+                    return;
+                } else {
+                    // Place the key in its final position
+                    array[shellJ] = shellKey;
+                    appendLog(QString("Inserted %1 at index %2").arg(shellKey).arg(shellJ));
+
+                    sortedIndices.insert(shellJ);   // mark as sorted only now
+                    shellInserting = false;         // key is placed
+
+                    // Highlight inserted element (green)
+                    highlightComparison(shellJ, -1, -1);
+
+                    shellI++; // move to next element
+                }
+            } else {
+                gap /= 2;   // shrink gap
+                shellI = gap; // reset index
+            }
+        } else {
+            // Sorting complete
+            timer->stop();
+            appendLog("Shell Sort complete.");
+            for (int k = 0; k < array.size(); ++k) sortedIndices.insert(k);
+
+            shellI = -1;
+            shellJ = -1;
+            shellInserting = false;
+
+            highlightComparison(-1, -1, -1); // sweep all green
+        }
+    }
 }
 
 
@@ -1092,65 +1182,74 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
         int barHeight = (maxVal > 0) ? (array[k] * maxBarHeight / maxVal) : 0;
 
         // Neutral base color for all bars
-        QColor color = QColor(200, 200, 200); // light gray
+        QColor color = QColor(200, 200, 200);
 
         // --- Merge Sort ---
         if (currentAlgorithm == SortAlgorithm::Merge) {
             if (k >= mergeLeftStart && k <= mergeLeftEnd)
-                color = QColor(0, 255, 255);   // Cyan – Left Half
+                color = QColor(0, 255, 255);
             else if (k >= mergeRightStart && k <= mergeRightEnd)
-                color = QColor(255, 20, 147);  // DeepPink – Right Half
+                color = QColor(255, 20, 147);
             else if (k >= mergeMergedStart && k <= mergeMergedEnd)
-                color = QColor(0, 255, 0);     // Lime – Merged Output
+                color = QColor(0, 255, 0);
         }
 
         // --- Quick Sort ---
         if (currentAlgorithm == SortAlgorithm::Quick) {
             if (k == pivotIndex && pivotIndex >= 0)
-                color = QColor(186, 85, 211);  // MediumOrchid – Pivot
+                color = QColor(186, 85, 211);
             else if (k == index1 || k == index2)
-                color = QColor(30, 144, 255);  // DodgerBlue – Comparing
+                color = QColor(30, 144, 255);
             else if (sortedIndices.contains(k))
-                color = QColor(0, 255, 0);   // Gold – Sorted
+                color = QColor(0, 255, 0);
         }
 
         // --- Heap Sort ---
         if (currentAlgorithm == SortAlgorithm::Heap) {
             if (k == index1)
-                color = QColor(255, 165, 0);   // Orange – Heapify Comparison
+                color = QColor(255, 165, 0);
             else if (k == index2)
-                color = QColor(255, 0, 0);     // Red – Extraction Swap
+                color = QColor(255, 0, 0);
             else if (sortedIndices.contains(k))
-                color = QColor(0, 255, 0);     // Green – Sorted Element
+                color = QColor(0, 255, 0);
         }
 
         // --- Bubble Sort ---
         if (currentAlgorithm == SortAlgorithm::Bubble) {
             if (k == index1 || k == index2)
-                color = QColor(220, 20, 60);   // Crimson – Current Comparison
+                color = QColor(220, 20, 60);
             else if (sortedIndices.contains(k))
-                color = QColor(0, 255, 0);   // ForestGreen – Sorted Tail
+                color = QColor(0, 255, 0);
         }
 
         // --- Insertion Sort ---
         if (currentAlgorithm == SortAlgorithm::Insertion) {
             if (k == index1)
-                color = QColor(65, 105, 225);  // RoyalBlue – Key Element
+                color = QColor(65, 105, 225);
             else if (k == index2)
-                color = QColor(255, 165, 0);   // Orange – Comparing Position
+                color = QColor(255, 165, 0);
             else if (sortedIndices.contains(k))
-                color = QColor(0, 255, 0);     // Green – Inserted/Sorted
+                color = QColor(0, 255, 0);
         }
 
         // --- Selection Sort ---
         if (currentAlgorithm == SortAlgorithm::Selection) {
             if (k == index1)
-                color = QColor(128, 0, 128);   // Purple – Current Minimum
+                color = QColor(128, 0, 128);
             else if (k == index2)
-                color = QColor(255, 0, 0);     // Red – Comparing
+                color = QColor(255, 0, 0);
             else if (sortedIndices.contains(k))
-                color = QColor(0, 255, 0);     // Green – Sorted Prefix
+                color = QColor(0, 255, 0);
         }
+        if (currentAlgorithm == SortAlgorithm::Shell) {
+            if (shellInserting && k == shellI)
+                color = QColor(65, 105, 225);  // RoyalBlue – key element
+            else if (shellInserting && (k == shellJ || k == shellJ + gap))
+                color = QColor(255, 165, 0);   // Orange – gap comparison
+            else if (sortedIndices.contains(k))
+                color = QColor(0, 255, 0);     // Green – sorted
+        }
+
 
         // Draw bar
         scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(color));
