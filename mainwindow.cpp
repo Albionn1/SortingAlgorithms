@@ -89,8 +89,6 @@ MainWindow::MainWindow(QWidget *parent)
     layout->addLayout(sliderRow);
 
     // Legend
-
-
     QVBoxLayout* legendContainer = new QVBoxLayout();
     legendTitleLabel = new QLabel("Legend");
     legendTitleLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
@@ -103,7 +101,6 @@ MainWindow::MainWindow(QWidget *parent)
     QWidget* legendWidget = new QWidget();
     legendWidget->setLayout(legendContainer);
     layout->addWidget(legendWidget);
-
 
     // Main visual + log
     layout->addWidget(view);
@@ -204,13 +201,11 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("green", "Placed / Sorted"));
         descriptionLabel->setText("TimSort – A hybrid, stable algorithm that blends merge sort and insertion sort for adaptive O(n log n) performance.");
     }
-
 }
 //Generate 20 random numbers(1 to 100)
 void MainWindow::onRandomClicked(){
     array.clear();
     QStringList numbers;
-
 
     for(int i = 0; i < 20; i++){
         int num = QRandomGenerator::global()->bounded(1, 101);
@@ -226,7 +221,6 @@ void MainWindow::onRandomClicked(){
 
 void MainWindow::onSliderMoved(int value) {
     if (value < 0 || value >= static_cast<int>(history.size())) return;
-
 
     array = history[value];
     drawArray(array);
@@ -262,7 +256,6 @@ void MainWindow::onSliderMoved(int value) {
             int pivot = pivotHistory[value];
 
             highlightComparison(i, j, pivot);
-
         }
     }
     if (currentAlgorithm == SortAlgorithm::Heap) {
@@ -307,8 +300,6 @@ void MainWindow::onResetClicked(){
     timer->stop();
     drawArray(array);
     appendLog("Reset to default.");
-
-
 }
 
 void MainWindow::onStartClicked() {
@@ -1446,7 +1437,6 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
             else if (sortedIndices.contains(k))
                 color = QColor(0, 255, 0);
         }
-
         // Draw bar
         scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(color));
 
