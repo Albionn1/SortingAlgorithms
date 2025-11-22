@@ -19,7 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Core widgets
     algorithmBox = new QComboBox();
-    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort"});
+    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort", "Radix Sort"});
 
     startButton = new QPushButton("Start Sort");
     resetButton = new QPushButton("Reset to Default");
@@ -200,6 +200,13 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Comparison (Insertion/Merge)"));
         legendLayout->addWidget(makeLegendItem("green", "Placed / Sorted"));
         descriptionLabel->setText("TimSort – A hybrid, stable algorithm that blends merge sort and insertion sort for adaptive O(n log n) performance.");
+    }
+    else if (selected == "Radix Sort") {
+        legendTitleLabel->setText("Legend — Radix Sort");
+        legendLayout->addWidget(makeLegendItem("royalblue", "Current Digit"));
+        legendLayout->addWidget(makeLegendItem("orange", "Bucket Placement"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted Output"));
+        descriptionLabel->setText("Radix Sort – A non-comparative, stable algorithm that sorts digit by digit using counting sort.");
     }
 }
 //Generate 20 random numbers(1 to 100)
@@ -488,6 +495,35 @@ void MainWindow::onStartClicked() {
 
         appendLog(QString("TimSort starting. runSize=%1").arg(timRunSize));
 
+        if (timer && !timer->isActive())
+            timer->start(delayBox->value());
+    }
+    else if (selected == "Radix Sort") {
+        currentAlgorithm = SortAlgorithm::Radix;
+
+        // Initialize Radix Sort state
+        radixInitialized = false;
+        digitPlace = 1;
+        radixIndex = 0;
+        radixPhase = RadixPhase::Count;
+        maxValue = *std::max_element(array.begin(), array.end());
+        std::fill(count.begin(), count.end(), 0);
+        bucket.resize(array.size());
+
+        // Reset common histories and highlights
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
+        // Push initial frame
+        pushFrame(array, -1, -1, -1);
+
+        // Log start
+        appendLog(QString("Radix Sort starting. maxValue=%1").arg(maxValue));
+
+        // Start timer if not already running
         if (timer && !timer->isActive())
             timer->start(delayBox->value());
     }
@@ -1268,6 +1304,117 @@ void MainWindow::onTimerTick(){
             }
         }
     }
+    else if (currentAlgorithm == SortAlgorithm::Radix) {
+        // Initialization
+        if (!radixInitialized) {
+            maxValue = *std::max_element(array.begin(), array.end());
+            digitPlace = 1;
+            radixPhase = RadixPhase::Count;
+            radixIndex = 0;
+            std::fill(count.begin(), count.end(), 0);
+            bucket.resize(array.size(), 0);
+            radixInitialized = true;
+
+            appendLog(QString("Radix Sort starting. maxValue=%1").arg(maxValue));
+            pushFrame(array, -1, -1, -1);
+            return;
+        }
+
+        // Counting phase
+        if (radixPhase == RadixPhase::Count) {
+            if (radixIndex < (int)array.size()) {
+                int digit = (array[radixIndex] / digitPlace) % 10;
+                count[digit]++;
+                highlightComparison(radixIndex, -1, -1);
+                pushFrame(array, radixIndex, -1, -1);
+
+                appendLog(QString("Counting digit %1 at index %2")
+                              .arg(digit).arg(radixIndex));
+
+                radixIndex++;
+                return;
+            } else {
+                radixPhase = RadixPhase::Accumulate;
+                radixIndex = 0;
+                appendLog("Switching to Accumulate phase.");
+                return;
+            }
+        }
+
+        // Accumulate phase
+        if (radixPhase == RadixPhase::Accumulate) {
+            if (radixIndex < 9) {
+                count[radixIndex + 1] += count[radixIndex];
+                highlightComparison(-1, radixIndex, -1);
+                pushFrame(array, -1, radixIndex, -1);
+
+                appendLog(QString("Accumulating bucket %1").arg(radixIndex));
+
+                radixIndex++;
+                return;
+            } else {
+                radixPhase = RadixPhase::Place;
+                radixIndex = (int)array.size() - 1;
+                appendLog("Switching to Placement phase.");
+                return;
+            }
+        }
+
+        // Placement phase
+        if (radixPhase == RadixPhase::Place) {
+            if (radixIndex >= 0) {
+                int digit = (array[radixIndex] / digitPlace) % 10;
+                bucket[count[digit] - 1] = array[radixIndex];
+                count[digit]--;
+                highlightComparison(radixIndex, -1, -1);
+                pushFrame(array, radixIndex, -1, -1);
+
+                appendLog(QString("Placing value %1 (digit %2) into bucket[%3]")
+                              .arg(array[radixIndex])
+                              .arg(digit)
+                              .arg(count[digit]));
+
+
+                radixIndex--;
+                return;
+            } else {
+                radixPhase = RadixPhase::CopyBack;
+                radixIndex = 0;
+                appendLog("Switching to CopyBack phase.");
+                return;
+            }
+        }
+
+        // CopyBack phase
+        if (radixPhase == RadixPhase::CopyBack) {
+            if (radixIndex < (int)array.size()) {
+                array[radixIndex] = bucket[radixIndex];
+                highlightComparison(-1, -1, radixIndex);
+                pushFrame(array, -1, -1, radixIndex);
+
+                appendLog(QString("Copying back value %1 to index %2")
+                              .arg(array[radixIndex]).arg(radixIndex));
+
+                radixIndex++;
+                return;
+            } else {
+                digitPlace *= 10;
+                if (digitPlace <= maxValue) {
+                    radixPhase = RadixPhase::Count;
+                    radixIndex = 0;
+                    std::fill(count.begin(), count.end(), 0);
+                    std::fill(bucket.begin(), bucket.end(), 0);
+
+                    appendLog(QString("Next digit place: %1").arg(digitPlace));
+                    return;
+                } else {
+                    timer->stop();
+                    drawArrayFinished(array);
+                    appendLog("Radix Sort complete.");
+                }
+            }
+        }
+    }
 
 }
 
@@ -1436,6 +1583,18 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(255, 165, 0);
             else if (sortedIndices.contains(k))
                 color = QColor(0, 255, 0);
+        }
+        if (currentAlgorithm == SortAlgorithm::Radix) {
+            if (radixPhase == RadixPhase::Count && k == radixIndex) {
+                color = QColor(65, 105, 225);
+            }
+            else if ((radixPhase == RadixPhase::Accumulate && k == radixIndex) ||
+                     (radixPhase == RadixPhase::Place && k == radixIndex)) {
+                color = QColor(255, 165, 0);
+            }
+            else if (radixPhase == RadixPhase::CopyBack && k == radixIndex) {
+                color = QColor(0, 255, 0);
+            }
         }
         // Draw bar
         scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(color));

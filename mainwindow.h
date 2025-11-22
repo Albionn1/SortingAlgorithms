@@ -45,8 +45,8 @@ private slots:
 
 private:
 
-    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim};
-    SortAlgorithm currentAlgorithm = SortAlgorithm::Bubble; // default
+    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim, Radix};
+    SortAlgorithm currentAlgorithm;
 
     //Sorting state
     int i = 0, j = 0, key = 0, minIndex =0;
@@ -92,6 +92,16 @@ private:
     bool timMerging;
     int timLeft, timMid, timRight;
     std::vector<int> timMergeBuffer;
+
+    bool radixInitialized = false;
+    int maxValue;
+    int digitPlace;
+    int radixIndex;
+    std::vector<int> count = std::vector<int>(10, 0);
+    std::vector<int> bucket;
+    enum class RadixPhase { Count, Accumulate, Place, CopyBack };
+    RadixPhase radixPhase;
+
 
     inline void pushFrame(const std::vector<int>& arr, int i, int j, int pivot = -1) {
         history.push_back(arr);
