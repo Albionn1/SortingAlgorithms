@@ -45,7 +45,7 @@ private slots:
 
 private:
 
-    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell};
+    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim};
     SortAlgorithm currentAlgorithm;
 
     //Sorting state
@@ -83,6 +83,15 @@ private:
     int shellKey;
     bool shellInserting;
 
+
+    int timRunSize;
+    std::vector<std::pair<int,int>> timRuns;
+    int timStart, timEnd;
+    int timI, timJ, timKey;
+    bool timInserting;
+    bool timMerging;
+    int timLeft, timMid, timRight;
+    std::vector<int> timMergeBuffer;
 
     inline void pushFrame(const std::vector<int>& arr, int i, int j, int pivot = -1) {
         history.push_back(arr);
