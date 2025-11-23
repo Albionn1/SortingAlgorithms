@@ -45,7 +45,7 @@ private slots:
 
 private:
 
-    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim, Radix};
+    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim, Radix, Gnome};
     SortAlgorithm currentAlgorithm;
 
     //Sorting state
@@ -102,6 +102,7 @@ private:
     enum class RadixPhase { Count, Accumulate, Place, CopyBack };
     RadixPhase radixPhase;
 
+    int gnomeIndex;
 
     inline void pushFrame(const std::vector<int>& arr, int i, int j, int pivot = -1) {
         history.push_back(arr);

@@ -9,6 +9,33 @@
 #include <QHBoxLayout>
 #include <QRandomGenerator>
 
+/*
+ * Program: Sorting Algorithm Visualizer
+ * Author: Albion Berisha
+ *
+ * Description:
+ * This program provides a visual demonstration of multiple sorting algorithms
+ * (e.g., Bubble Sort, Insertion Sort, Quick Sort, Merge Sort, Tim Sort, Radix Sort, Gnome Sort).
+ * Each algorithm is animated step-by-step, with bars representing array elements
+ * and colors highlighting comparisons, swaps, and sorted sections.
+ *
+ * Usage:
+ * 1. Launch the application.
+ * 2. Select a sorting algorithm from the dropdown menu.
+ * 3. Press "Start" to begin the visualization.
+ * 4. Use the speed slider to adjust animation speed in real time.
+ * 5. Observe the legend for color meanings:
+ *      - Blue: Default unsorted elements
+ *      - Magenta/Cyan/Orange: Active comparisons depending on algorithm
+ *      - Green: Sorted section
+ * 6. The log panel will display textual updates for each step.
+ *
+ * Notes:
+ * - Each algorithm runs incrementally on a timer, so you can follow the process visually.
+ * - The program is designed for educational purposes, helping users understand
+ *   how different sorting algorithms operate internally.
+ */
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), i(0), j(0), ui(new Ui::MainWindow)
 {
@@ -19,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Core widgets
     algorithmBox = new QComboBox();
-    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort", "Radix Sort"});
+    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort", "Radix Sort", "Gnome Sort"});
 
     startButton = new QPushButton("Start Sort");
     resetButton = new QPushButton("Reset to Default");
@@ -223,6 +250,13 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Bucket Placement"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Output"));
         descriptionLabel->setText("Radix Sort – A non-comparative, stable algorithm that sorts digit by digit using counting sort.");
+    }
+    else if (selected == "Gnome Sort") {
+        legendTitleLabel->setText("Legend — Gnome Sort");
+        legendLayout->addWidget(makeLegendItem("magenta", "Current Gnome Position"));
+        legendLayout->addWidget(makeLegendItem("cyan", "Neighbor Being Compared"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted Section"));
+        descriptionLabel->setText("Gnome Sort – A simple algorithm that moves elements back and forth like a garden gnome tidying a line.");
     }
 }
 //Generate 20 random numbers(1 to 100)
@@ -517,7 +551,6 @@ void MainWindow::onStartClicked() {
     else if (selected == "Radix Sort") {
         currentAlgorithm = SortAlgorithm::Radix;
 
-        // Initialize Radix Sort state
         radixInitialized = false;
         digitPlace = 1;
         radixIndex = 0;
@@ -526,20 +559,33 @@ void MainWindow::onStartClicked() {
         std::fill(count.begin(), count.end(), 0);
         bucket.resize(array.size());
 
-        // Reset common histories and highlights
         sortedIndices.clear();
         history.clear();
         iHistory.clear();
         jHistory.clear();
         pivotHistory.clear();
 
-        // Push initial frame
         pushFrame(array, -1, -1, -1);
 
-        // Log start
         appendLog(QString("Radix Sort starting. maxValue=%1").arg(maxValue));
 
-        // Start timer if not already running
+        if (timer && !timer->isActive())
+            timer->start(delayBox->value());
+    }
+    else if (selected == "Gnome Sort") {
+        currentAlgorithm = SortAlgorithm::Gnome;
+
+        sortedIndices.clear();
+        history.clear();
+        iHistory.clear();
+        jHistory.clear();
+        pivotHistory.clear();
+
+        gnomeIndex = 0;
+        pushFrame(array, -1, -1, -1);
+
+        appendLog("Starting Gnome Sort.");
+
         if (timer && !timer->isActive())
             timer->start(delayBox->value());
     }
@@ -1431,9 +1477,33 @@ void MainWindow::onTimerTick(){
             }
         }
     }
+    else if (currentAlgorithm == SortAlgorithm::Gnome) {
+        if (gnomeIndex < array.size()) {
+            int index1 = gnomeIndex;
+            int index2 = gnomeIndex - 1;
+
+            if (gnomeIndex == 0 || array[index1] >= array[index2]) {
+                gnomeIndex++;
+            } else {
+                std::swap(array[index1], array[index2]);
+                gnomeIndex--;
+            }
+
+            highlightComparison(index1, index2, -1);
+
+            pushFrame(array, index1, index2, -1);
+
+            appendLog(QString("Comparing indices %1 and %2").arg(index1).arg(index2));
+            return;
+        } else {
+            timer->stop();
+            drawArrayFinished(array);
+            appendLog("Gnome Sort complete.");
+        }
+    }
+
 
 }
-
 
 void MainWindow::updateScene() {
     scene->clear();
@@ -1610,8 +1680,20 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
             }
             else if (radixPhase == RadixPhase::CopyBack && k == radixIndex) {
                 color = QColor(0, 255, 0);
+            }  
+        }
+        if (currentAlgorithm == SortAlgorithm::Gnome) {
+            if (k == index1) {
+                color = QColor(255, 0, 255);
+            }
+            else if (k == index2) {
+                color = QColor(0, 255, 255);
+            }
+            else if (sortedIndices.contains(k)) {
+                color = QColor(0, 255, 0);
             }
         }
+
         // Draw bar
         scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(color));
 
