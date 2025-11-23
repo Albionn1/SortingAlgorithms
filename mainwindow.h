@@ -1,3 +1,4 @@
+
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
@@ -17,12 +18,13 @@
 #include <QCheckBox>
 #include <QHBoxLayout>
 #include <QWidget>
+#include <QListWidget>
 #include <stack>
 #include <vector>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
-class MainWindow;
+    class MainWindow;
 }
 QT_END_NAMESPACE
 
@@ -31,7 +33,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
 private slots:
@@ -45,11 +47,11 @@ private slots:
 
 private:
 
-    enum class SortAlgorithm{Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim, Radix, Gnome};
+    enum class SortAlgorithm { Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim, Radix, Gnome };
     SortAlgorithm currentAlgorithm;
 
     //Sorting state
-    int i = 0, j = 0, key = 0, minIndex =0;
+    int i = 0, j = 0, key = 0, minIndex = 0;
 
     int quickLeft = 0, quickRight = 0;
     QStack<QPair<int, int>> quickStack;
@@ -85,7 +87,7 @@ private:
 
 
     int timRunSize;
-    std::vector<std::pair<int,int>> timRuns;
+    std::vector<std::pair<int, int>> timRuns;
     int timStart, timEnd;
     int timI, timJ, timKey;
     bool timInserting;
@@ -120,7 +122,7 @@ private:
 
     bool stepMode = false;
 
-    Ui::MainWindow *ui;
+    Ui::MainWindow* ui;
     QLineEdit* inputField;
     QPushButton* startButton;
     QGraphicsView* view;
@@ -147,6 +149,11 @@ private:
     QGraphicsTextItem* complexityLabel = nullptr;
     QLabel* legendTitleLabel;
 
+    // Pseudocode widget
+    QListWidget* pseudocodeView;
+    int pseudocodeCurrent = -1;
+    void setPseudocode(const QStringList& lines);
+    void highlightPseudocodeLine(int index); // index is 0-based
 
     std::vector<int> array;
     std::vector<std::vector<int>> history;
@@ -160,8 +167,6 @@ private:
     std::vector<int> mergeRightEndHistory;
     std::vector<int> mergeMergedStartHistory;
     std::vector<int> mergeMergedEndHistory;
-
-
 
 
     int currentStep = 0;

@@ -8,35 +8,18 @@
 #include <QMessageBox>
 #include <QHBoxLayout>
 #include <QRandomGenerator>
+#include <QListWidget>
+#include <QBrush>
+#include <QColor>
 
 /*
  * Program: Sorting Algorithm Visualizer
  * Author: Albion Berisha
  *
- * Description:
- * This program provides a visual demonstration of multiple sorting algorithms
- * (e.g., Bubble Sort, Insertion Sort, Quick Sort, Merge Sort, Tim Sort, Radix Sort, Gnome Sort).
- * Each algorithm is animated step-by-step, with bars representing array elements
- * and colors highlighting comparisons, swaps, and sorted sections.
- *
- * Usage:
- * 1. Launch the application.
- * 2. Select a sorting algorithm from the dropdown menu.
- * 3. Press "Start" to begin the visualization.
- * 4. Use the speed slider to adjust animation speed in real time.
- * 5. Observe the legend for color meanings:
- *      - Blue: Default unsorted elements
- *      - Magenta/Cyan/Orange: Active comparisons depending on algorithm
- *      - Green: Sorted section
- * 6. The log panel will display textual updates for each step.
- *
- * Notes:
- * - Each algorithm runs incrementally on a timer, so you can follow the process visually.
- * - The program is designed for educational purposes, helping users understand
- *   how different sorting algorithms operate internally.
+ * (file header omitted for brevity)
  */
 
-MainWindow::MainWindow(QWidget* parent)
+    MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), i(0), j(0), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -88,6 +71,13 @@ MainWindow::MainWindow(QWidget* parent)
     slider->setMaximum(0);
     slider->setToolTip("Drag to scrub through sorting steps");
 
+    // Pseudocode view
+    pseudocodeView = new QListWidget();
+    pseudocodeView->setSelectionMode(QAbstractItemView::SingleSelection);
+    pseudocodeView->setFocusPolicy(Qt::NoFocus);
+    pseudocodeView->setFixedWidth(420);
+    pseudocodeView->setWordWrap(true);
+
     // Layout: Algorithm + Start + Reset
     QHBoxLayout* sortControls = new QHBoxLayout();
     sortControls->addWidget(new QLabel("Algorithm:"));
@@ -132,14 +122,30 @@ MainWindow::MainWindow(QWidget* parent)
     legendWidget->setLayout(legendContainer);
     layout->addWidget(legendWidget);
 
-    // Main visual + log
-    layout->addWidget(view);
-    layout->addWidget(logView);
-    layout->addWidget(descriptionLabel);
+    // Main visual + pseudocode + log (side-by-side)
+    QHBoxLayout* mainRow = new QHBoxLayout();
+    // left: graphics view
+    mainRow->addWidget(view, /*stretch=*/3);
+
+    // right: pseudocode above log + description
+    QVBoxLayout* rightCol = new QVBoxLayout();
+    QLabel* pcLabel = new QLabel("Pseudocode");
+    pcLabel->setStyleSheet("font-weight:bold;");
+    rightCol->addWidget(pcLabel);
+    rightCol->addWidget(pseudocodeView);
+    rightCol->addWidget(new QLabel("Log"));
+    rightCol->addWidget(logView, /*stretch=*/2);
+    rightCol->addWidget(descriptionLabel);
+
+    QWidget* rightWidget = new QWidget();
+    rightWidget->setLayout(rightCol);
+    mainRow->addWidget(rightWidget, /*stretch=*/2);
+
+    layout->addLayout(mainRow);
 
     // Finalize
     setCentralWidget(central);
-    resize(1000, 800);
+    resize(1400, 900);
     setWindowTitle("Sorting Algorithms Visualizer");
 
     // Connections
@@ -168,6 +174,50 @@ MainWindow::MainWindow(QWidget* parent)
 
 }
 
+void MainWindow::setPseudocode(const QStringList& lines) {
+    pseudocodeView->clear();
+    for (const QString& ln : lines) {
+        QListWidgetItem* it = new QListWidgetItem(ln);
+        it->setFlags(it->flags() & ~Qt::ItemIsSelectable); // selection used only for highlight
+        pseudocodeView->addItem(it);
+    }
+    pseudocodeCurrent = -1;
+    highlightPseudocodeLine(-1);
+}
+
+void MainWindow::highlightPseudocodeLine(int index) {
+    if (!pseudocodeView) return;
+
+    // Reset old styles
+    for (int r = 0; r < pseudocodeView->count(); ++r) {
+        QListWidgetItem* it = pseudocodeView->item(r);
+        QFont f = it->font();
+        f.setBold(false);
+        it->setFont(f);
+        it->setForeground(QBrush(Qt::black));
+        it->setBackground(QBrush(Qt::white));
+    }
+
+    // If invalid index, clear selection
+    if (index < 0 || index >= pseudocodeView->count()) {
+        pseudocodeView->clearSelection();
+        pseudocodeView->setCurrentRow(-1);
+        pseudocodeCurrent = -1;
+        return;
+    }
+
+    // Style the active line
+    QListWidgetItem* active = pseudocodeView->item(index);
+    QFont af = active->font();
+    af.setBold(true);
+    active->setFont(af);
+    active->setForeground(QBrush(QColor(30, 144, 255))); // DodgerBlue
+    active->setBackground(QBrush(QColor(230, 245, 255)));
+    pseudocodeView->setCurrentRow(index);
+    pseudocodeCurrent = index;
+}
+
+// Note: onAlgorithmSelected now also sets pseudocode per algorithm.
 void MainWindow::onAlgorithmSelected(const QString& selected) {
     // Clear existing legend items
     QLayoutItem* child;
@@ -195,6 +245,12 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("red", "Extraction Swap"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Element"));
         descriptionLabel->setText("Heap Sort – An in-place, comparison-based algorithm that builds a binary heap and repeatedly extracts the maximum for O(n log n) performance.");
+        setPseudocode({
+            "1. Build max-heap from array",
+            "2. For each node: heapify (compare and swap children)",
+            "3. Swap root with last element (extract max)",
+            "4. Repeat until sorted"
+            });
     }
     else if (selected == "Quick Sort") {
         legendTitleLabel->setText("Legend — Quick Sort");
@@ -202,6 +258,13 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("dodgerblue", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted"));
         descriptionLabel->setText("Quick Sort - Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
+        setPseudocode({
+            "1. Choose pivot (rightmost)",
+            "2. Partition: for j=left..right-1 compare with pivot; if less swap",
+            "3. Place pivot by swapping A[i+1] and A[right]",
+            "4. Push left/right partitions to stack and repeat",
+            "5. Finished"
+            });
     }
     else if (selected == "Merge Sort") {
         legendTitleLabel->setText("Legend — Merge Sort");
@@ -209,12 +272,28 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("deeppink", "Right Half"));
         legendLayout->addWidget(makeLegendItem("green", "Merged Output"));
         descriptionLabel->setText("Merge Sort – A stable, divide-and-conquer algorithm that recursively splits and merges arrays for guaranteed O(n log n) performance.");
+        setPseudocode({
+            "1. If left >= right return",
+            "2. mid = (left+right)/2",
+            "3. sort(left, mid)",
+            "4. sort(mid+1, right)",
+            "5. merge two halves into temporary buffer and copy back",
+            "6. Finished"
+            });
     }
     else if (selected == "Bubble Sort") {
         legendTitleLabel->setText("Legend — Bubble Sort");
         legendLayout->addWidget(makeLegendItem("crimson", "Current Comparison"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Tail"));
         descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted.");
+        setPseudocode({
+            "1. for i = 0 to n-1",
+            "2.   for j = 0 to n-i-2",
+            "3.     compare A[j] and A[j+1]",
+            "4.     if A[j] > A[j+1] swap",
+            "5.   mark position n-i-1 as settled",
+            "6. finished"
+            });
     }
     else if (selected == "Insertion Sort") {
         legendTitleLabel->setText("Legend — Insertion Sort");
@@ -222,6 +301,13 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Comparing Position"));
         legendLayout->addWidget(makeLegendItem("green", "Inserted / Sorted"));
         descriptionLabel->setText("Insertion Sort - Builds the sorted array one item at a time. Fast on nearly sorted data.");
+        setPseudocode({
+            "1. for i = 1 to n-1",
+            "2.   key = A[i]; j = i-1",
+            "3.   while j >= 0 and A[j] > key: A[j+1] = A[j]; j--",
+            "4.   A[j+1] = key",
+            "5. finished"
+            });
     }
     else if (selected == "Selection Sort") {
         legendTitleLabel->setText("Legend — Selection Sort");
@@ -229,6 +315,13 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("red", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Prefix"));
         descriptionLabel->setText("Selection Sort - Finds the minimum and places it. Easy to understand, but always O(n²).");
+        setPseudocode({
+            "1. for i = 0 to n-2",
+            "2.   min = i",
+            "3.   for j = i+1 to n-1 if A[j] < A[min] min = j",
+            "4.   swap A[i], A[min]",
+            "5. finished"
+            });
     }
     else if (selected == "Shell Sort") {
         legendTitleLabel->setText("Legend — Shell Sort");
@@ -236,6 +329,12 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Gap Comparison"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted / Final"));
         descriptionLabel->setText("Shell Sort – An adaptive, gap-based algorithm that generalizes insertion sort for faster O(n log² n) performance.");
+        setPseudocode({
+            "1. gap = n/2",
+            "2. while gap > 0: do gapped insertion sort for gap",
+            "3. gap /= 2",
+            "4. finished"
+            });
     }
     else if (selected == "Tim Sort") {
         legendTitleLabel->setText("Legend — TimSort");
@@ -243,6 +342,12 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Comparison (Insertion/Merge)"));
         legendLayout->addWidget(makeLegendItem("green", "Placed / Sorted"));
         descriptionLabel->setText("TimSort – A hybrid, stable algorithm that blends merge sort and insertion sort for adaptive O(n log n) performance.");
+        setPseudocode({
+            "1. Break array into runs (e.g. 32)",
+            "2. Insertion-sort each run",
+            "3. Merge runs pairwise until one run covers array",
+            "4. finished"
+            });
     }
     else if (selected == "Radix Sort") {
         legendTitleLabel->setText("Legend — Radix Sort");
@@ -250,6 +355,14 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Bucket Placement"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Output"));
         descriptionLabel->setText("Radix Sort – A non-comparative, stable algorithm that sorts digit by digit using counting sort.");
+        setPseudocode({
+            "1. For digitPlace = 1; digitPlace <= max; digitPlace *= 10:",
+            "2.   count digits at digitPlace",
+            "3.   accumulate counts",
+            "4.   place items into bucket by digit",
+            "5.   copy buckets back to array",
+            "6. finished"
+            });
     }
     else if (selected == "Gnome Sort") {
         legendTitleLabel->setText("Legend — Gnome Sort");
@@ -257,8 +370,16 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("cyan", "Neighbor Being Compared"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Section"));
         descriptionLabel->setText("Gnome Sort – A simple algorithm that moves elements back and forth like a garden gnome tidying a line.");
+        setPseudocode({
+            "1. index = 0",
+            "2. while index < n:",
+            "3.   if index == 0 or A[index] >= A[index-1]: index++",
+            "4.   else swap A[index], A[index-1]; index--",
+            "5. finished"
+            });
     }
 }
+
 //Generate 20 random numbers(1 to 100)
 void MainWindow::onRandomClicked() {
     array.clear();
@@ -358,6 +479,7 @@ void MainWindow::onResetClicked() {
     timer->stop();
     drawArray(array);
     appendLog("Reset to default.");
+    highlightPseudocodeLine(-1);
 }
 
 void MainWindow::onStartClicked() {
@@ -404,6 +526,8 @@ void MainWindow::onStartClicked() {
         i = 0; j = 0;
 
         appendLog("Starting Bubble Sort.");
+        // show pseudocode (already set in onAlgorithmSelected) and highlight first line
+        highlightPseudocodeLine(0);
     }
     else if (selected == "Insertion Sort") {
         currentAlgorithm = SortAlgorithm::Insertion;
@@ -416,6 +540,7 @@ void MainWindow::onStartClicked() {
         pivotHistory.clear();
 
         appendLog("Starting Insertion Sort.");
+        highlightPseudocodeLine(0);
     }
     else if (selected == "Selection Sort") {
         currentAlgorithm = SortAlgorithm::Selection;
@@ -433,6 +558,7 @@ void MainWindow::onStartClicked() {
             timer->start(delayBox->value());
 
         appendLog("Starting Selection Sort.");
+        highlightPseudocodeLine(0);
     }
     else if (selected == "Quick Sort") {
         currentAlgorithm = SortAlgorithm::Quick;
@@ -450,6 +576,7 @@ void MainWindow::onStartClicked() {
 
         quickI = quickJ = quickPivot = -1;
         appendLog("Starting Quick Sort.");
+        highlightPseudocodeLine(0);
     }
     else if (selected == "Merge Sort") {
         currentAlgorithm = SortAlgorithm::Merge;
@@ -472,6 +599,7 @@ void MainWindow::onStartClicked() {
         mergeMergedStart = mergeMergedEnd = -1;
 
         appendLog("Starting Merge Sort...");
+        highlightPseudocodeLine(0);
     }
     else if (selected == "Heap Sort") {
         currentAlgorithm = SortAlgorithm::Heap;
@@ -500,6 +628,7 @@ void MainWindow::onStartClicked() {
         appendLog(QString("Heap Sort starting. heapSize=%1").arg(heapSize));
 
         if (timer && !timer->isActive()) timer->start(delayBox->value());
+        highlightPseudocodeLine(0);
     }
     else if (selected == "Shell Sort") {
         currentAlgorithm = SortAlgorithm::Shell;
@@ -519,8 +648,9 @@ void MainWindow::onStartClicked() {
         appendLog(QString("Shell Sort starting. gap=%1").arg(gap));
 
         if (timer && !timer->isActive()) timer->start(delayBox->value());
+        highlightPseudocodeLine(0);
     }
-    else if (selected == "TimSort") {
+    else if (selected == "Tim Sort") {
         currentAlgorithm = SortAlgorithm::Tim;
 
         timRunSize = 32;
@@ -548,6 +678,7 @@ void MainWindow::onStartClicked() {
 
         if (timer && !timer->isActive())
             timer->start(delayBox->value());
+        highlightPseudocodeLine(0);
     }
     else if (selected == "Radix Sort") {
         currentAlgorithm = SortAlgorithm::Radix;
@@ -572,6 +703,7 @@ void MainWindow::onStartClicked() {
 
         if (timer && !timer->isActive())
             timer->start(delayBox->value());
+        highlightPseudocodeLine(0);
     }
     else if (selected == "Gnome Sort") {
         currentAlgorithm = SortAlgorithm::Gnome;
@@ -589,6 +721,7 @@ void MainWindow::onStartClicked() {
 
         if (timer && !timer->isActive())
             timer->start(delayBox->value());
+        highlightPseudocodeLine(0);
     }
 
     drawArray(array);
@@ -622,12 +755,17 @@ void MainWindow::onTimerTick() {
 
                 appendLog(stepLabel->text());
 
+                // pseudocode line: compare (0-based index 2 => step 3 in displayed list)
+                highlightPseudocodeLine(2);
                 highlightComparison(j, j + 1, -1);
                 if (array[j] > array[j + 1]) {
                     appendLog(QString("Swap: %1 > %2 -> swapping.").arg(array[j]).arg(array[j + 1]));
 
                     std::swap(array[j], array[j + 1]);
                     // drawArray(array);
+
+                    // show the swap pseudocode line
+                    highlightPseudocodeLine(3);
                 }
                 else {
                     appendLog(QString("No swap: %1 <= %2.").arg(array[j]).arg(array[j + 1]));
@@ -645,6 +783,8 @@ void MainWindow::onTimerTick() {
 
                 appendLog(QString("Pass %1 complete. Largest element settled at position %2.").arg(i + 1).arg(array.size() - i - 1));
 
+                // mark settled pseudocode line
+                highlightPseudocodeLine(4);
                 highlightComparison(settledIndex, -1, -1);
 
                 j = 0;
@@ -655,6 +795,7 @@ void MainWindow::onTimerTick() {
             timer->stop();
             appendLog("Sorting complete.");
             appendLog("Array is sorted.");
+            highlightPseudocodeLine(5);
 
             for (int k = 0; k < array.size(); ++k) {
                 sortedIndices.insert(k);
@@ -683,6 +824,8 @@ void MainWindow::onTimerTick() {
                 appendLog(QString("Taking key = %1 at index %2").arg(key).arg(i));
                 appendLog(stepLabel->text());
 
+                // pseudocode: taking key (line 1)
+                highlightPseudocodeLine(1);
                 highlightComparison(i, -1, -1);
                 return;
             }
@@ -698,6 +841,8 @@ void MainWindow::onTimerTick() {
                     appendLog(stepLabel->text());
                     array[j + 1] = array[j];
 
+                    // pseudocode: shifting (line 2)
+                    highlightPseudocodeLine(2);
                     highlightComparison(j, j + 1, -1);
 
                     j--;
@@ -713,6 +858,8 @@ void MainWindow::onTimerTick() {
                     appendLog(QString("Inserting key %1 at index %2").arg(key).arg(j + 1));
                     appendLog(stepLabel->text());
 
+                    // pseudocode: insert (line 3)
+                    highlightPseudocodeLine(3);
                     highlightComparison(j + 1, -1, -1);
 
                     i++;
@@ -729,6 +876,7 @@ void MainWindow::onTimerTick() {
             timer->stop();
             appendLog("Insertion Sort complete.");
             appendLog("Array is sorted.");
+            highlightPseudocodeLine(4);
 
             for (int k = 0; k < array.size(); ++k) {
                 sortedIndices.insert(k);
@@ -756,6 +904,8 @@ void MainWindow::onTimerTick() {
                     .arg(j).arg(array[j]).arg(minIndex).arg(array[minIndex]));
                 appendLog(stepLabel->text());
 
+                // show "for j" comparison line (line 2)
+                highlightPseudocodeLine(2);
                 highlightComparison(j, minIndex, -1);
 
                 if (array[j] < array[minIndex]) {
@@ -771,6 +921,7 @@ void MainWindow::onTimerTick() {
                     appendLog(QString("Swapping index %1 (%2) with min index %3 (%4)")
                         .arg(i).arg(array[minIndex]).arg(minIndex).arg(array[i]));
 
+                    highlightPseudocodeLine(3);
                 }
                 else {
                     appendLog(QString("No swap needed for index %1").arg(i));
@@ -790,6 +941,7 @@ void MainWindow::onTimerTick() {
             appendLog("Selection Sort complete.");
             appendLog("Array is sorted.");
             drawArrayFinished(array);
+            highlightPseudocodeLine(4);
         }
 
     }
@@ -812,6 +964,8 @@ void MainWindow::onTimerTick() {
                 appendLog(QString("Partitioning from %1 to %2 with pivot %3").arg(left).arg(right).arg(pivotValue));
                 appendLog(stepLabel->text());
 
+                // pseudocode: choose pivot / initialize partition (line 0 or 1)
+                highlightPseudocodeLine(0);
                 highlightComparison(-1, -1, quickRight);
 
                 history.push_back(array);
@@ -828,6 +982,8 @@ void MainWindow::onTimerTick() {
         if (quickJ >= 0 && quickJ < quickRight) {
             appendLog(QString("Comparing %1 with pivot %2").arg(array[quickJ]).arg(pivotValue));
             appendLog(stepLabel->text());
+            // pseudocode: comparing line
+            highlightPseudocodeLine(1);
             highlightComparison(quickJ, quickRight, quickRight);
 
 
@@ -844,6 +1000,9 @@ void MainWindow::onTimerTick() {
                 std::swap(array[quickI], array[quickJ]);
                 drawArray(array);
                 appendLog(QString("Swapped %1 and %2").arg(array[quickI]).arg(array[quickJ]));
+
+                // pseudocode: swap occurred (line 2)
+                highlightPseudocodeLine(2);
 
                 history.push_back(array);
                 pivotHistory.push_back(quickRight);
@@ -884,6 +1043,9 @@ void MainWindow::onTimerTick() {
             slider->setMaximum(currentStep);
             slider->setValue(currentStep);
 
+            // pseudocode: placing pivot (line 3)
+            highlightPseudocodeLine(3);
+
             return;
         }
 
@@ -895,6 +1057,7 @@ void MainWindow::onTimerTick() {
             highlightComparison(-1, -1, -1);
 
             drawArrayFinished(array);
+            highlightPseudocodeLine(4);
         }
     }
     //QUICKSORT ALGORITHM ENDS HERE
@@ -959,6 +1122,9 @@ void MainWindow::onTimerTick() {
 
         // Merge step-by-step
         if (merging) {
+            // highlight "merge" pseudocode line (line 4 in displayed list)
+            highlightPseudocodeLine(4);
+
             if (mergeI <= mergeMid && mergeJ <= mergeRight) {
                 highlightComparison(mergeI, mergeJ, -1);
                 if (array[mergeI] <= array[mergeJ]) {
@@ -1015,7 +1181,7 @@ void MainWindow::onTimerTick() {
                 slider->setMaximum(currentStep);
                 slider->setValue(currentStep);
             }
-            else if (mergeJ <= mergeRight) {
+else if (mergeJ <= mergeRight) {
                 highlightComparison(-1, mergeJ, -1);
                 mergeBuffer[mergeK++] = array[mergeJ++];
 
@@ -1072,6 +1238,7 @@ void MainWindow::onTimerTick() {
                     timer->stop();
                     drawArrayFinished(array);
                     appendLog("Merge Sort complete.");
+                    highlightPseudocodeLine(5); // finished
                 }
             }
         }
@@ -1092,6 +1259,9 @@ void MainWindow::onTimerTick() {
                 if (right < heapSize && array[right] > array[largest]) largest = right;
 
                 heapJ = largest;
+
+                // pseudocode: heapify step
+                highlightPseudocodeLine(1);
 
                 if (largest != heapI) {
                     std::swap(array[heapI], array[largest]);
@@ -1115,6 +1285,8 @@ void MainWindow::onTimerTick() {
                 heapBuilding = false;
                 heapSwapping = true;
                 appendLog("Max-heap built. Starting extraction.");
+                // pseudocode: ready to extract
+                highlightPseudocodeLine(2);
                 return;
             }
         }
@@ -1130,6 +1302,9 @@ void MainWindow::onTimerTick() {
 
                 heapI = 0;
                 heapJ = heapSize;
+
+                // pseudocode: extract max swap
+                highlightPseudocodeLine(2);
 
                 // Visualize extraction
                 highlightComparison(0, heapSize, -1);
@@ -1155,6 +1330,9 @@ void MainWindow::onTimerTick() {
                 if (right < heapSize && array[right] > array[largest]) largest = right;
 
                 heapJ = largest;
+
+                // pseudocode: heapify step
+                highlightPseudocodeLine(1);
 
                 if (largest != heapI) {
                     std::swap(array[heapI], array[largest]);
@@ -1185,6 +1363,9 @@ void MainWindow::onTimerTick() {
                 highlightComparison(-1, -1, -1);
                 drawArrayFinished(array);
                 if (timer) timer->stop();
+
+                // pseudocode: finished
+                highlightPseudocodeLine(3);
                 return;
             }
         }
@@ -1203,6 +1384,9 @@ void MainWindow::onTimerTick() {
 
                     appendLog(QString("Taking key = %1 at index %2").arg(shellKey).arg(shellI));
 
+                    // pseudocode: gapped insertion start
+                    highlightPseudocodeLine(1);
+
                     highlightComparison(shellI, -1, -1);
                     return;
                 }
@@ -1217,6 +1401,9 @@ void MainWindow::onTimerTick() {
                     slider->setMaximum(currentStep);
                     slider->setValue(currentStep);
 
+                    // pseudocode: shifting in gapped insertion
+                    highlightPseudocodeLine(2);
+
                     highlightComparison(shellJ, shellJ + gap, -1);
                     return;
                 }
@@ -1227,6 +1414,8 @@ void MainWindow::onTimerTick() {
                     sortedIndices.insert(shellJ);
                     shellInserting = false;
 
+                    // pseudocode: insertion done (mark)
+                    highlightPseudocodeLine(3);
 
                     highlightComparison(shellJ, -1, -1);
 
@@ -1236,6 +1425,9 @@ void MainWindow::onTimerTick() {
             else {
                 gap /= 2;
                 shellI = gap;
+
+                // pseudocode: gap reduction
+                highlightPseudocodeLine(2);
             }
         }
         else {
@@ -1248,18 +1440,27 @@ void MainWindow::onTimerTick() {
             shellInserting = false;
 
             highlightComparison(-1, -1, -1);
+
+            // pseudocode finished
+            highlightPseudocodeLine(3);
         }
     }
     //SHELL SORT ALGORITHM ENDS HERE
 
 
-
-    //TIM SORT ALGORITHM STARTS HERE
+    // TIM SORT ALGORITHM STARTS HERE
     else if (currentAlgorithm == SortAlgorithm::Tim) {
         if (timInserting) {
             if (timStart < (int)array.size()) {
                 if (timI < timEnd) {
+                    // When we start working on a new key, ensure we log it.
+                    if (timJ == timI) {
+                        appendLog(QString("Run [%1, %2): taking key at index %3 (value %4)")
+                            .arg(timStart).arg(timEnd).arg(timI).arg(array[timI]));
+                    }
+
                     if (timJ > timStart && array[timJ - 1] > timKey) {
+                        appendLog(QString("Shifting index %1 (value %2) right to %3").arg(timJ - 1).arg(array[timJ - 1]).arg(timJ));
                         array[timJ] = array[timJ - 1];
                         timJ--;
 
@@ -1268,56 +1469,58 @@ void MainWindow::onTimerTick() {
                         slider->setMaximum(currentStep);
                         slider->setValue(currentStep);
 
+                        // pseudocode: insertion in run
+                        highlightPseudocodeLine(1);
 
                         highlightComparison(timJ, timJ + 1, -1);
                         if (stepMode) { timer->stop(); return; }
                         return;
                     }
                     else {
-
+                        // Insert key into its place and log it.
                         array[timJ] = timKey;
-
+                        appendLog(QString("Inserted key %1 at index %2 (run [%3,%4))").arg(timKey).arg(timJ).arg(timStart).arg(timEnd));
 
                         sortedIndices.insert(timJ);
                         highlightComparison(timJ, -1, -1);
-
 
                         timI++;
                         timJ = timI;
 
                         if (timI < timEnd) {
                             timKey = array[timI];
-
                             highlightComparison(timI, -1, -1);
                         }
                         else {
-
+                            // finished current run
                             timRuns.push_back({ timStart, timEnd });
                             appendLog(QString("Run sorted: [%1, %2)").arg(timStart).arg(timEnd));
-
 
                             timStart = timEnd;
                             timEnd = std::min(timStart + timRunSize, (int)array.size());
 
+                            // prepare next run's indices (if any)
+                            timI = timStart + 1;
+                            timJ = timI;
+                            timKey = (timI < timEnd) ? array[timI] : 0;
+
+                            // If we still have more runs to process, log it
                             if (timStart < (int)array.size()) {
-
-                                timI = timStart + 1;
-                                timJ = timI;
-                                timKey = (timI < timEnd) ? array[timI] : 0;
-
+                                appendLog(QString("Starting next run: [%1, %2)").arg(timStart).arg(timEnd));
                                 highlightComparison(timI, -1, -1);
                             }
                             else {
-
+                                // No more runs to insert-sort; switch to merging phase
                                 timInserting = false;
                                 timMerging = true;
                                 appendLog("All runs sorted. Starting merge phase.");
+                                highlightPseudocodeLine(2);
                             }
                         }
                     }
                 }
                 else {
-
+                    // timI >= timEnd: finalize current run and prepare next
                     timRuns.push_back({ timStart, timEnd });
                     appendLog(QString("Run sorted: [%1, %2)").arg(timStart).arg(timEnd));
 
@@ -1328,17 +1531,19 @@ void MainWindow::onTimerTick() {
                         timI = timStart + 1;
                         timJ = timI;
                         timKey = (timI < timEnd) ? array[timI] : 0;
+                        appendLog(QString("Starting next run: [%1, %2)").arg(timStart).arg(timEnd));
                         highlightComparison(timI, -1, -1);
                     }
                     else {
                         timInserting = false;
                         timMerging = true;
                         appendLog("All runs sorted. Starting merge phase.");
+                        highlightPseudocodeLine(2);
                     }
                 }
             }
             else {
-
+                // no input left: switch to merging
                 timInserting = false;
                 timMerging = true;
             }
@@ -1354,6 +1559,8 @@ void MainWindow::onTimerTick() {
                 timLeft = leftRun.first;
                 timMid = leftRun.second;
                 timRight = rightRun.second;
+
+                appendLog(QString("Merging runs [%1,%2) and [%3,%4)").arg(timLeft).arg(timMid).arg(timMid).arg(timRight));
 
                 timMergeBuffer.assign(array.begin() + timLeft, array.begin() + timMid);
 
@@ -1374,8 +1581,9 @@ void MainWindow::onTimerTick() {
                     slider->setMaximum(currentStep);
                     slider->setValue(currentStep);
 
-
                     highlightComparison(i + timLeft, j, -1);
+                    // pseudocode: merging runs
+                    highlightPseudocodeLine(2);
                     if (stepMode) { timer->stop(); return; }
                     return;
                 }
@@ -1397,10 +1605,12 @@ void MainWindow::onTimerTick() {
                 for (int k = 0; k < (int)array.size(); ++k) sortedIndices.insert(k);
                 highlightComparison(-1, -1, -1);
                 timMerging = false;
+
+                highlightPseudocodeLine(3);
             }
         }
-    }
-    //SHELL SORT ALGORITHM ENDS HERE
+        }
+    //TIM SORT ALGORITHM ENDS HERE
 
 
     //RADIX SORT ALGORITHM STARTS HERE
@@ -1417,6 +1627,9 @@ void MainWindow::onTimerTick() {
 
             appendLog(QString("Radix Sort starting. maxValue=%1").arg(maxValue));
             pushFrame(array, -1, -1, -1);
+
+            // pseudocode: outer loop init
+            highlightPseudocodeLine(0);
             return;
         }
 
@@ -1425,6 +1638,9 @@ void MainWindow::onTimerTick() {
             if (radixIndex < (int)array.size()) {
                 int digit = (array[radixIndex] / digitPlace) % 10;
                 count[digit]++;
+                // pseudocode: counting digits
+                highlightPseudocodeLine(1);
+
                 highlightComparison(radixIndex, -1, -1);
                 pushFrame(array, radixIndex, -1, -1);
 
@@ -1446,6 +1662,9 @@ void MainWindow::onTimerTick() {
         if (radixPhase == RadixPhase::Accumulate) {
             if (radixIndex < 9) {
                 count[radixIndex + 1] += count[radixIndex];
+                // pseudocode: accumulate
+                highlightPseudocodeLine(2);
+
                 highlightComparison(-1, radixIndex, -1);
                 pushFrame(array, -1, radixIndex, -1);
 
@@ -1468,6 +1687,9 @@ void MainWindow::onTimerTick() {
                 int digit = (array[radixIndex] / digitPlace) % 10;
                 bucket[count[digit] - 1] = array[radixIndex];
                 count[digit]--;
+                // pseudocode: place into bucket
+                highlightPseudocodeLine(3);
+
                 highlightComparison(radixIndex, -1, -1);
                 pushFrame(array, radixIndex, -1, -1);
 
@@ -1492,6 +1714,9 @@ void MainWindow::onTimerTick() {
         if (radixPhase == RadixPhase::CopyBack) {
             if (radixIndex < (int)array.size()) {
                 array[radixIndex] = bucket[radixIndex];
+                // pseudocode: copy back
+                highlightPseudocodeLine(4);
+
                 highlightComparison(-1, -1, radixIndex);
                 pushFrame(array, -1, -1, radixIndex);
 
@@ -1516,6 +1741,8 @@ void MainWindow::onTimerTick() {
                     timer->stop();
                     drawArrayFinished(array);
                     appendLog("Radix Sort complete.");
+                    // pseudocode finished
+                    highlightPseudocodeLine(5);
                 }
             }
         }
@@ -1531,10 +1758,14 @@ void MainWindow::onTimerTick() {
 
             if (gnomeIndex == 0 || array[index1] >= array[index2]) {
                 gnomeIndex++;
+                // pseudocode: advancing
+                highlightPseudocodeLine(2);
             }
             else {
                 std::swap(array[index1], array[index2]);
                 gnomeIndex--;
+                // pseudocode: swap
+                highlightPseudocodeLine(3);
             }
 
             highlightComparison(index1, index2, -1);
@@ -1548,6 +1779,7 @@ void MainWindow::onTimerTick() {
             timer->stop();
             drawArrayFinished(array);
             appendLog("Gnome Sort complete.");
+            highlightPseudocodeLine(4);
         }
     }
     //GNOME SORT ALGORITHM ENDS HERE
