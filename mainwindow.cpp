@@ -36,7 +36,7 @@
  *   how different sorting algorithms operate internally.
  */
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), i(0), j(0), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
@@ -46,7 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Core widgets
     algorithmBox = new QComboBox();
-    algorithmBox->addItems({"Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort", "Radix Sort", "Gnome Sort"});
+    algorithmBox->addItems({ "Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort", "Radix Sort", "Gnome Sort" });
 
     startButton = new QPushButton("Start Sort");
     resetButton = new QPushButton("Reset to Default");
@@ -160,7 +160,7 @@ MainWindow::MainWindow(QWidget *parent)
             timer->setInterval(stepDelay);
         }
         appendLog(QString("Speed set to %1 ms").arg(stepDelay));
-    });
+        });
 
 
     connect(randomButton, &QPushButton::clicked, this, &MainWindow::onRandomClicked);
@@ -187,7 +187,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         QWidget* itemWidget = new QWidget();
         itemWidget->setLayout(itemLayout);
         return itemWidget;
-    };
+        };
 
     if (selected == "Heap Sort") {
         legendTitleLabel->setText("Legend — Heap Sort");
@@ -260,11 +260,11 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
     }
 }
 //Generate 20 random numbers(1 to 100)
-void MainWindow::onRandomClicked(){
+void MainWindow::onRandomClicked() {
     array.clear();
     QStringList numbers;
 
-    for(int i = 0; i < 20; i++){
+    for (int i = 0; i < 20; i++) {
         int num = QRandomGenerator::global()->bounded(1, 101);
         array.push_back(num);
         numbers << QString::number(num);
@@ -296,7 +296,7 @@ void MainWindow::onSliderMoved(int value) {
         }
     }
 
-    if(currentAlgorithm == SortAlgorithm::Merge){
+    if (currentAlgorithm == SortAlgorithm::Merge) {
         if (value >= 0 && value < history.size()) {
             array = history[value];
 
@@ -323,23 +323,24 @@ void MainWindow::onSliderMoved(int value) {
         }
     }
 
-     stepLabel->setText(QString("Step %1 / %2").arg(value).arg(history.size() - 1));
+    stepLabel->setText(QString("Step %1 / %2").arg(value).arg(history.size() - 1));
 }
 
-void MainWindow::onStepModeToggled(bool checked){
+void MainWindow::onStepModeToggled(bool checked) {
     stepMode = checked;
     nextStepButton->setEnabled(checked);
 
-    if(checked){
+    if (checked) {
         timer->stop();
         descriptionLabel->setText("Step-by-step mode enabled. Click Next step to proceed.");
-    }else{
+    }
+    else {
         timer->start(delayBox->value());
         descriptionLabel->setText("Step-by-step mode disabled. Sorting will proceed automatically.");
     }
 }
 
-void MainWindow::onResetClicked(){
+void MainWindow::onResetClicked() {
 
     inputField->setText("58 12 91 7 34 76 25 63 89 3 47 68 20 99 14 55 81 39 6 72");
     array.clear();
@@ -444,17 +445,17 @@ void MainWindow::onStartClicked() {
 
         quickStack.clear();
         if (!array.empty()) {
-            quickStack.push({0, static_cast<int>(array.size() - 1)});
+            quickStack.push({ 0, static_cast<int>(array.size() - 1) });
         }
 
         quickI = quickJ = quickPivot = -1;
         appendLog("Starting Quick Sort.");
     }
-    else if (selected == "Merge Sort"){
+    else if (selected == "Merge Sort") {
         currentAlgorithm = SortAlgorithm::Merge;
         mergeStack = {};
         mergeBuffer = array;
-        mergeStack.push({0, static_cast<int>(array.size() - 1), false}); // false = split phase
+        mergeStack.push({ 0, static_cast<int>(array.size() - 1), false }); // false = split phase
         merging = false;
 
         sortedIndices.clear();
@@ -529,10 +530,10 @@ void MainWindow::onStartClicked() {
         timMerging = false;
 
         timStart = 0;
-        timEnd   = std::min(timStart + timRunSize, (int)array.size());
+        timEnd = std::min(timStart + timRunSize, (int)array.size());
 
-        timI   = timStart + 1;
-        timJ   = timI;
+        timI = timStart + 1;
+        timJ = timI;
         timKey = (timI < timEnd) ? array[timI] : 0;
 
         sortedIndices.clear();
@@ -598,20 +599,21 @@ void MainWindow::onStartClicked() {
         timer->stop();
         nextStepButton->setEnabled(true);
         descriptionLabel->setText("Step-by-step mode: click 'Next Step' to begin.");
-    } else {
+    }
+    else {
         timer->start(delayBox->value());
     }
 }
 
-void MainWindow::onTimerTick(){
+void MainWindow::onTimerTick() {
     //BUBBLE ALGORITHM STARTS HERE
-    if(currentAlgorithm == SortAlgorithm::Bubble){
-        if(i < static_cast<int>(array.size())){
-            if(j < static_cast<int>(array.size()) - i - 1){
+    if (currentAlgorithm == SortAlgorithm::Bubble) {
+        if (i < static_cast<int>(array.size())) {
+            if (j < static_cast<int>(array.size()) - i - 1) {
 
 
 
-                appendLog(QString("Comparing positions %1 and %2 (%3 vs %4).").arg(j).arg(j+1).arg(array[j]).arg(array[j+1]));
+                appendLog(QString("Comparing positions %1 and %2 (%3 vs %4).").arg(j).arg(j + 1).arg(array[j]).arg(array[j + 1]));
 
                 history.push_back(array);
                 currentStep = static_cast<int>(history.size()) - 1;
@@ -620,33 +622,36 @@ void MainWindow::onTimerTick(){
 
                 appendLog(stepLabel->text());
 
-                highlightComparison(j, j+1, -1);
-                if(array[j] > array[j+1]){
-                    appendLog(QString("Swap: %1 > %2 -> swapping.").arg(array[j]).arg(array[j+1]));
+                highlightComparison(j, j + 1, -1);
+                if (array[j] > array[j + 1]) {
+                    appendLog(QString("Swap: %1 > %2 -> swapping.").arg(array[j]).arg(array[j + 1]));
 
-                    std::swap(array[j], array[j+1]);
+                    std::swap(array[j], array[j + 1]);
                     // drawArray(array);
-                }else{
-                    appendLog(QString("No swap: %1 <= %2.").arg(array[j]).arg(array[j+1]));
+                }
+                else {
+                    appendLog(QString("No swap: %1 <= %2.").arg(array[j]).arg(array[j + 1]));
                 }
                 j++;
-                if(stepMode){
+                if (stepMode) {
                     timer->stop();
                     return;
                 }
-            }else{
+            }
+            else {
 
                 int settledIndex = array.size() - i - 1;
                 sortedIndices.insert(settledIndex);
 
-                appendLog(QString("Pass %1 complete. Largest element settled at position %2.").arg(i+1).arg(array.size() - i - 1));
+                appendLog(QString("Pass %1 complete. Largest element settled at position %2.").arg(i + 1).arg(array.size() - i - 1));
 
                 highlightComparison(settledIndex, -1, -1);
 
                 j = 0;
                 i++;
             }
-        }else{
+        }
+        else {
             timer->stop();
             appendLog("Sorting complete.");
             appendLog("Array is sorted.");
@@ -663,7 +668,7 @@ void MainWindow::onTimerTick(){
     //BUBBLE ALGORITHMS ENDS HERE
 
     //INSERTION ALGORITHM STARTS HERE
-    else if(currentAlgorithm == SortAlgorithm::Insertion){
+    else if (currentAlgorithm == SortAlgorithm::Insertion) {
         if (i < static_cast<int>(array.size())) {
             if (!inserting) {
                 key = array[i];
@@ -680,7 +685,8 @@ void MainWindow::onTimerTick(){
 
                 highlightComparison(i, -1, -1);
                 return;
-            } else {
+            }
+            else {
                 if (j >= 0 && array[j] > key) {
                     appendLog(QString("Shifting %1 right (index %2)").arg(array[j]).arg(j));
 
@@ -696,7 +702,8 @@ void MainWindow::onTimerTick(){
 
                     j--;
                     return;
-                } else {
+                }
+                else {
                     history.push_back(array);
                     currentStep = static_cast<int>(history.size()) - 1;
                     slider->setMaximum(currentStep);
@@ -712,17 +719,18 @@ void MainWindow::onTimerTick(){
                     inserting = false;
                     return;
                 }
-                if(stepMode){
+                if (stepMode) {
                     timer->stop();
                     return;
                 }
             }
-        } else {
+        }
+        else {
             timer->stop();
             appendLog("Insertion Sort complete.");
             appendLog("Array is sorted.");
 
-            for (int k = 0; k < array.size(); ++k){
+            for (int k = 0; k < array.size(); ++k) {
                 sortedIndices.insert(k);
             }
             highlightComparison(-1, -1, -1);
@@ -734,7 +742,7 @@ void MainWindow::onTimerTick(){
 
 
     //SELECTION ALGORITHM STARTS HERE
-    else if(currentAlgorithm == SortAlgorithm::Selection) {
+    else if (currentAlgorithm == SortAlgorithm::Selection) {
         if (i < static_cast<int>(array.size()) - 1) {
             if (j < static_cast<int>(array.size())) {
 
@@ -745,7 +753,7 @@ void MainWindow::onTimerTick(){
 
 
                 appendLog(QString("Comparing index %1 (%2) with current min index %3 (%4)")
-                            .arg(j).arg(array[j]).arg(minIndex).arg(array[minIndex]));
+                    .arg(j).arg(array[j]).arg(minIndex).arg(array[minIndex]));
                 appendLog(stepLabel->text());
 
                 highlightComparison(j, minIndex, -1);
@@ -756,17 +764,19 @@ void MainWindow::onTimerTick(){
                 }
                 j++;
                 return;
-            } else {
+            }
+            else {
                 if (minIndex != i) {
                     std::swap(array[i], array[minIndex]);
                     appendLog(QString("Swapping index %1 (%2) with min index %3 (%4)")
-                                  .arg(i).arg(array[minIndex]).arg(minIndex).arg(array[i]));
+                        .arg(i).arg(array[minIndex]).arg(minIndex).arg(array[i]));
 
-                } else {
+                }
+                else {
                     appendLog(QString("No swap needed for index %1").arg(i));
                 }
                 i++;
-                if(stepMode){
+                if (stepMode) {
                     timer->stop();
                     return;
                 }
@@ -774,7 +784,8 @@ void MainWindow::onTimerTick(){
                 minIndex = i;
                 return;
             }
-        } else {
+        }
+        else {
             timer->stop();
             appendLog("Selection Sort complete.");
             appendLog("Array is sorted.");
@@ -843,14 +854,14 @@ void MainWindow::onTimerTick(){
                 slider->setValue(currentStep);
             }
             quickJ++;
-            if(stepMode){
+            if (stepMode) {
                 timer->stop();
                 return;
             }
             return;
         }
 
-        if (quickJ == quickRight) {            
+        if (quickJ == quickRight) {
             std::swap(array[quickI + 1], array[quickRight]);
             drawArray(array);
 
@@ -859,8 +870,8 @@ void MainWindow::onTimerTick(){
 
             int pivotIndex = quickI + 1;
             appendLog(QString("Placed pivot %1 at index %2").arg(array[pivotIndex]).arg(pivotIndex));
-            quickStack.push({quickLeft, pivotIndex - 1});
-            quickStack.push({pivotIndex + 1, quickRight});
+            quickStack.push({ quickLeft, pivotIndex - 1 });
+            quickStack.push({ pivotIndex + 1, quickRight });
 
             quickI = quickJ = quickPivot = -1;
             pivotValue = -1;
@@ -901,9 +912,9 @@ void MainWindow::onTimerTick(){
                 if (!isMerge) {
                     if (left < right) {
                         int mid = (left + right) / 2;
-                        mergeStack.push({left, right, true});       // merge phase
-                        mergeStack.push({mid + 1, right, false});   // right half
-                        mergeStack.push({left, mid, false});        // left half
+                        mergeStack.push({ left, right, true });       // merge phase
+                        mergeStack.push({ mid + 1, right, false });   // right half
+                        mergeStack.push({ left, mid, false });        // left half
 
                         mergeLeftStartHistory.push_back(mergeLeftStart);
                         mergeLeftEndHistory.push_back(mergeLeftEnd);
@@ -965,7 +976,8 @@ void MainWindow::onTimerTick(){
                     jHistory.push_back(-1);
                     pivotHistory.push_back(-1);
 
-                } else {
+                }
+                else {
                     mergeBuffer[mergeK++] = array[mergeJ++];
 
                     mergeLeftStartHistory.push_back(mergeLeftStart);
@@ -982,7 +994,8 @@ void MainWindow::onTimerTick(){
 
 
                 }
-            } else if (mergeI <= mergeMid) {
+            }
+            else if (mergeI <= mergeMid) {
                 highlightComparison(mergeI, -1, -1);
                 mergeBuffer[mergeK++] = array[mergeI++];
 
@@ -1001,7 +1014,8 @@ void MainWindow::onTimerTick(){
                 currentStep = static_cast<int>(history.size()) - 1;
                 slider->setMaximum(currentStep);
                 slider->setValue(currentStep);
-            } else if (mergeJ <= mergeRight) {
+            }
+            else if (mergeJ <= mergeRight) {
                 highlightComparison(-1, mergeJ, -1);
                 mergeBuffer[mergeK++] = array[mergeJ++];
 
@@ -1020,7 +1034,8 @@ void MainWindow::onTimerTick(){
                 currentStep = static_cast<int>(history.size()) - 1;
                 slider->setMaximum(currentStep);
                 slider->setValue(currentStep);
-            } else {
+            }
+            else {
                 for (int i = mergeLeft; i <= mergeRight; ++i)
                     array[i] = mergeBuffer[i];
 
@@ -1082,7 +1097,8 @@ void MainWindow::onTimerTick(){
                     std::swap(array[heapI], array[largest]);
                     heapStack.push(largest);
                     appendLog(QString("Heapify swap at %1 with %2").arg(heapI).arg(largest));
-                } else {
+                }
+                else {
                     appendLog(QString("Heapify compare at %1 (no swap)").arg(heapI));
                 }
 
@@ -1093,7 +1109,8 @@ void MainWindow::onTimerTick(){
 
                 if (stepMode) { timer->stop(); return; }
                 return;
-            } else {
+            }
+            else {
                 // Transition to extraction
                 heapBuilding = false;
                 heapSwapping = true;
@@ -1143,7 +1160,8 @@ void MainWindow::onTimerTick(){
                     std::swap(array[heapI], array[largest]);
                     heapStack.push(largest);
                     appendLog(QString("Re-heapify swap at %1 with %2").arg(heapI).arg(largest));
-                } else {
+                }
+                else {
                     appendLog(QString("Re-heapify compare at %1 (no swap)").arg(heapI));
                 }
                 highlightComparison(heapI, largest, -1);
@@ -1201,7 +1219,8 @@ void MainWindow::onTimerTick(){
 
                     highlightComparison(shellJ, shellJ + gap, -1);
                     return;
-                } else {
+                }
+                else {
                     array[shellJ] = shellKey;
                     appendLog(QString("Inserted %1 at index %2").arg(shellKey).arg(shellJ));
 
@@ -1213,11 +1232,13 @@ void MainWindow::onTimerTick(){
 
                     shellI++;
                 }
-            } else {
+            }
+            else {
                 gap /= 2;
                 shellI = gap;
             }
-        } else {
+        }
+        else {
             timer->stop();
             appendLog("Shell Sort complete.");
             for (int k = 0; k < array.size(); ++k) sortedIndices.insert(k);
@@ -1251,7 +1272,8 @@ void MainWindow::onTimerTick(){
                         highlightComparison(timJ, timJ + 1, -1);
                         if (stepMode) { timer->stop(); return; }
                         return;
-                    } else {
+                    }
+                    else {
 
                         array[timJ] = timKey;
 
@@ -1267,53 +1289,58 @@ void MainWindow::onTimerTick(){
                             timKey = array[timI];
 
                             highlightComparison(timI, -1, -1);
-                        } else {
+                        }
+                        else {
 
-                            timRuns.push_back({timStart, timEnd});
+                            timRuns.push_back({ timStart, timEnd });
                             appendLog(QString("Run sorted: [%1, %2)").arg(timStart).arg(timEnd));
 
 
                             timStart = timEnd;
-                            timEnd   = std::min(timStart + timRunSize, (int)array.size());
+                            timEnd = std::min(timStart + timRunSize, (int)array.size());
 
                             if (timStart < (int)array.size()) {
 
-                                timI   = timStart + 1;
-                                timJ   = timI;
+                                timI = timStart + 1;
+                                timJ = timI;
                                 timKey = (timI < timEnd) ? array[timI] : 0;
 
                                 highlightComparison(timI, -1, -1);
-                            } else {
+                            }
+                            else {
 
                                 timInserting = false;
-                                timMerging   = true;
+                                timMerging = true;
                                 appendLog("All runs sorted. Starting merge phase.");
                             }
                         }
                     }
-                } else {
+                }
+                else {
 
-                    timRuns.push_back({timStart, timEnd});
+                    timRuns.push_back({ timStart, timEnd });
                     appendLog(QString("Run sorted: [%1, %2)").arg(timStart).arg(timEnd));
 
                     timStart = timEnd;
-                    timEnd   = std::min(timStart + timRunSize, (int)array.size());
+                    timEnd = std::min(timStart + timRunSize, (int)array.size());
 
                     if (timStart < (int)array.size()) {
-                        timI   = timStart + 1;
-                        timJ   = timI;
+                        timI = timStart + 1;
+                        timJ = timI;
                         timKey = (timI < timEnd) ? array[timI] : 0;
                         highlightComparison(timI, -1, -1);
-                    } else {
+                    }
+                    else {
                         timInserting = false;
-                        timMerging   = true;
+                        timMerging = true;
                         appendLog("All runs sorted. Starting merge phase.");
                     }
                 }
-            } else {
+            }
+            else {
 
                 timInserting = false;
-                timMerging   = true;
+                timMerging = true;
             }
         }
 
@@ -1322,10 +1349,10 @@ void MainWindow::onTimerTick(){
             if (timRuns.size() > 1) {
 
                 auto rightRun = timRuns.back(); timRuns.pop_back();
-                auto leftRun  = timRuns.back(); timRuns.pop_back();
+                auto leftRun = timRuns.back(); timRuns.pop_back();
 
-                timLeft  = leftRun.first;
-                timMid   = leftRun.second;
+                timLeft = leftRun.first;
+                timMid = leftRun.second;
                 timRight = rightRun.second;
 
                 timMergeBuffer.assign(array.begin() + timLeft, array.begin() + timMid);
@@ -1337,7 +1364,8 @@ void MainWindow::onTimerTick(){
                 while (i < (int)timMergeBuffer.size() && j < timRight) {
                     if (timMergeBuffer[i] <= array[j]) {
                         array[k++] = timMergeBuffer[i++];
-                    } else {
+                    }
+                    else {
                         array[k++] = array[j++];
                     }
 
@@ -1359,9 +1387,10 @@ void MainWindow::onTimerTick(){
                 for (int idx = timLeft; idx < timRight; ++idx)
                     sortedIndices.insert(idx);
 
-                timRuns.push_back({timLeft, timRight});
+                timRuns.push_back({ timLeft, timRight });
                 appendLog(QString("Merged runs into [%1, %2)").arg(timLeft).arg(timRight));
-            } else {
+            }
+            else {
                 timer->stop();
 
                 appendLog("TimSort complete.");
@@ -1400,11 +1429,12 @@ void MainWindow::onTimerTick(){
                 pushFrame(array, radixIndex, -1, -1);
 
                 appendLog(QString("Counting digit %1 at index %2")
-                              .arg(digit).arg(radixIndex));
+                    .arg(digit).arg(radixIndex));
 
                 radixIndex++;
                 return;
-            } else {
+            }
+            else {
                 radixPhase = RadixPhase::Accumulate;
                 radixIndex = 0;
                 appendLog("Switching to Accumulate phase.");
@@ -1423,7 +1453,8 @@ void MainWindow::onTimerTick(){
 
                 radixIndex++;
                 return;
-            } else {
+            }
+            else {
                 radixPhase = RadixPhase::Place;
                 radixIndex = (int)array.size() - 1;
                 appendLog("Switching to Placement phase.");
@@ -1441,14 +1472,15 @@ void MainWindow::onTimerTick(){
                 pushFrame(array, radixIndex, -1, -1);
 
                 appendLog(QString("Placing value %1 (digit %2) into bucket[%3]")
-                              .arg(array[radixIndex])
-                              .arg(digit)
-                              .arg(count[digit]));
+                    .arg(array[radixIndex])
+                    .arg(digit)
+                    .arg(count[digit]));
 
 
                 radixIndex--;
                 return;
-            } else {
+            }
+            else {
                 radixPhase = RadixPhase::CopyBack;
                 radixIndex = 0;
                 appendLog("Switching to CopyBack phase.");
@@ -1464,11 +1496,12 @@ void MainWindow::onTimerTick(){
                 pushFrame(array, -1, -1, radixIndex);
 
                 appendLog(QString("Copying back value %1 to index %2")
-                              .arg(array[radixIndex]).arg(radixIndex));
+                    .arg(array[radixIndex]).arg(radixIndex));
 
                 radixIndex++;
                 return;
-            } else {
+            }
+            else {
                 digitPlace *= 10;
                 if (digitPlace <= maxValue) {
                     radixPhase = RadixPhase::Count;
@@ -1478,7 +1511,8 @@ void MainWindow::onTimerTick(){
 
                     appendLog(QString("Next digit place: %1").arg(digitPlace));
                     return;
-                } else {
+                }
+                else {
                     timer->stop();
                     drawArrayFinished(array);
                     appendLog("Radix Sort complete.");
@@ -1497,7 +1531,8 @@ void MainWindow::onTimerTick(){
 
             if (gnomeIndex == 0 || array[index1] >= array[index2]) {
                 gnomeIndex++;
-            } else {
+            }
+            else {
                 std::swap(array[index1], array[index2]);
                 gnomeIndex--;
             }
@@ -1508,7 +1543,8 @@ void MainWindow::onTimerTick(){
 
             appendLog(QString("Comparing indices %1 and %2").arg(index1).arg(index2));
             return;
-        } else {
+        }
+        else {
             timer->stop();
             drawArrayFinished(array);
             appendLog("Gnome Sort complete.");
@@ -1535,9 +1571,11 @@ void MainWindow::updateScene() {
         // Optional: highlight logic (minimal)
         if (currentAlgorithm == SortAlgorithm::Bubble && (index == i || index == j)) {
             color = Qt::red;
-        } else if (currentAlgorithm == SortAlgorithm::Quick && index == quickPivot) {
+        }
+        else if (currentAlgorithm == SortAlgorithm::Quick && index == quickPivot) {
             color = Qt::yellow;
-        } else if (sortedIndices.contains(static_cast<int>(index))) {
+        }
+        else if (sortedIndices.contains(static_cast<int>(index))) {
             color = Qt::green;
         }
 
@@ -1550,24 +1588,24 @@ void MainWindow::updateScene() {
     }
 }
 
-void MainWindow::setStep(const QString& msg){
+void MainWindow::setStep(const QString& msg) {
     stepLabel->setText(msg);
 }
 
-void MainWindow::appendLog(const QString& msg){
+void MainWindow::appendLog(const QString& msg) {
     logView->appendPlainText(msg);
 }
 
-void MainWindow::drawArray(const std::vector<int>& arr){
+void MainWindow::drawArray(const std::vector<int>& arr) {
     scene->clear();
 
-    if(arr.empty()) return;
+    if (arr.empty()) return;
 
     int maxVal = *std::max_element(arr.begin(), arr.end());
     int maxBarHeight = 150;
 
     int x = 10;
-    for(int val : arr){
+    for (int val : arr) {
         int barHeight = (maxVal > 0) ? (val * maxBarHeight / maxVal) : 0;
 
         scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(Qt::blue));
@@ -1579,16 +1617,16 @@ void MainWindow::drawArray(const std::vector<int>& arr){
     }
 }
 
-void MainWindow::drawArrayFinished(const std::vector<int>& arr){
+void MainWindow::drawArrayFinished(const std::vector<int>& arr) {
     scene->clear();
 
-    if(arr.empty()) return;
+    if (arr.empty()) return;
 
     int maxVal = *std::max_element(array.begin(), array.end());
     int maxBarHeight = 150;
 
     int x = 10;
-    for(int val : arr){
+    for (int val : arr) {
         int barHeight = (maxVal > 0) ? (val * maxBarHeight / maxVal) : 0;
         scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(Qt::green));
 
@@ -1607,6 +1645,87 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
     int maxVal = *std::max_element(array.begin(), array.end());
     int maxBarHeight = 150;
     int x = 10;
+
+    // Build a concise step description to display above the bars.
+    QString stepMsg;
+    // Radix has distinct phases
+    if (currentAlgorithm == SortAlgorithm::Radix) {
+        switch (radixPhase) {
+        case RadixPhase::Count:
+            if (index1 >= 0 && index1 < (int)array.size())
+                stepMsg = QString("Counting digit at index %1 (value %2)").arg(index1).arg(array[index1]);
+            else
+                stepMsg = QString("Counting digits...");
+            break;
+        case RadixPhase::Accumulate:
+            if (index2 >= 0)
+                stepMsg = QString("Accumulating bucket %1").arg(index2);
+            else
+                stepMsg = QString("Accumulating buckets...");
+            break;
+        case RadixPhase::Place:
+            if (index1 >= 0 && index1 < (int)array.size())
+                stepMsg = QString("Placing value %1 (index %2)").arg(array[index1]).arg(index1);
+            else
+                stepMsg = QString("Placing values into buckets...");
+            break;
+        case RadixPhase::CopyBack:
+            if (pivotIndex >= 0)
+                stepMsg = QString("Copying back value to index %1").arg(pivotIndex);
+            else
+                stepMsg = QString("Copying back from buckets...");
+            break;
+        }
+    }
+    // Quick sort pivot/info
+    else if (currentAlgorithm == SortAlgorithm::Quick) {
+        if (pivotIndex >= 0 && pivotIndex < (int)array.size() && (index1 < 0 && index2 < 0))
+            stepMsg = QString("Pivot at index %1 (value %2)").arg(pivotIndex).arg(array[pivotIndex]);
+        else if (index1 >= 0 && pivotIndex >= 0)
+            stepMsg = QString("Comparing index %1 (%2) with pivot index %3 (%4)").arg(index1).arg(array[index1]).arg(pivotIndex).arg(array[pivotIndex]);
+        else if (index1 >= 0 && index2 >= 0)
+            stepMsg = QString("Comparing index %1 (%2) and %3 (%4)").arg(index1).arg(array[index1]).arg(index2).arg(array[index2]);
+    }
+    // Merge: show merging range if available
+    else if (currentAlgorithm == SortAlgorithm::Merge) {
+        if (mergeLeftStart >= 0 && mergeMergedEnd >= 0)
+            stepMsg = QString("Merging range [%1, %2]").arg(mergeLeftStart).arg(mergeMergedEnd);
+        else if (index1 >= 0 && index2 >= 0)
+            stepMsg = QString("Comparing left %1 (%2) and right %3 (%4)").arg(index1).arg(array[index1]).arg(index2).arg(array[index2]);
+        else if (index1 >= 0)
+            stepMsg = QString("Taking from left index %1 (%2)").arg(index1).arg(array[index1]);
+        else if (index2 >= 0)
+            stepMsg = QString("Taking from right index %1 (%2)").arg(index2).arg(array[index2]);
+    }
+    // Generic messages for other algorithms
+    else {
+        if (index1 >= 0 && index2 >= 0 && index1 < (int)array.size() && index2 < (int)array.size()) {
+            stepMsg = QString("Comparing index %1 (%2) and %3 (%4)").arg(index1).arg(array[index1]).arg(index2).arg(array[index2]);
+        }
+        else if (index1 >= 0 && index1 < (int)array.size()) {
+            stepMsg = QString("Active index %1 (value %2)").arg(index1).arg(array[index1]);
+        }
+        else if (index2 >= 0 && index2 < (int)array.size()) {
+            stepMsg = QString("Active index %1 (value %2)").arg(index2).arg(array[index2]);
+        }
+        else if (pivotIndex >= 0 && pivotIndex < (int)array.size()) {
+            stepMsg = QString("Pivot at index %1 (value %2)").arg(pivotIndex).arg(array[pivotIndex]);
+        }
+        else {
+            stepMsg.clear();
+        }
+    }
+
+    // Display the step description above the array (as a scene text item)
+    if (!stepMsg.isEmpty()) {
+        QGraphicsTextItem* header = scene->addText(stepMsg);
+        QFont f = header->font();
+        f.setBold(true);
+        header->setFont(f);
+        header->setDefaultTextColor(Qt::black);
+        // Position header above the bars; bars start at y = 200 - maxBarHeight
+        header->setPos(10, 200 - maxBarHeight - 24);
+    }
 
     for (int k = 0; k < array.size(); ++k) {
         int barHeight = (maxVal > 0) ? (array[k] * maxBarHeight / maxVal) : 0;
@@ -1676,8 +1795,8 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
         if (currentAlgorithm == SortAlgorithm::Tim) {
             if (timInserting && k == timI)
                 color = QColor(65, 105, 225);
-            else if ((timInserting && (k == timJ || k == timJ+1)) ||
-                     (timMerging && (k == timLeft || k == timMid)))
+            else if ((timInserting && (k == timJ || k == timJ + 1)) ||
+                (timMerging && (k == timLeft || k == timMid)))
                 color = QColor(255, 165, 0);
             else if (sortedIndices.contains(k))
                 color = QColor(0, 255, 0);
@@ -1687,12 +1806,12 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(65, 105, 225);
             }
             else if ((radixPhase == RadixPhase::Accumulate && k == radixIndex) ||
-                     (radixPhase == RadixPhase::Place && k == radixIndex)) {
+                (radixPhase == RadixPhase::Place && k == radixIndex)) {
                 color = QColor(255, 165, 0);
             }
             else if (radixPhase == RadixPhase::CopyBack && k == radixIndex) {
                 color = QColor(0, 255, 0);
-            }  
+            }
         }
         if (currentAlgorithm == SortAlgorithm::Gnome) {
             if (k == index1) {
