@@ -1171,6 +1171,10 @@ void MainWindow::onTimerTick(){
             }
         }
     }
+    //HEAP SORT ALGORITHM ENDS HERE
+
+
+    //SHELL SORT ALGORITHM STARTS HERE
     else if (currentAlgorithm == SortAlgorithm::Shell) {
         if (gap > 0) {
             if (shellI < static_cast<int>(array.size())) {
@@ -1225,10 +1229,11 @@ void MainWindow::onTimerTick(){
             highlightComparison(-1, -1, -1);
         }
     }
-        //HEAP SORT ALGORITHM ENDS HERE
+    //SHELL SORT ALGORITHM ENDS HERE
 
 
-        //TIM SORT ALGORITHM STARTS HERE
+
+    //TIM SORT ALGORITHM STARTS HERE
     else if (currentAlgorithm == SortAlgorithm::Tim) {
         if (timInserting) {
             if (timStart < (int)array.size()) {
@@ -1366,6 +1371,10 @@ void MainWindow::onTimerTick(){
             }
         }
     }
+    //SHELL SORT ALGORITHM ENDS HERE
+
+
+    //RADIX SORT ALGORITHM STARTS HERE
     else if (currentAlgorithm == SortAlgorithm::Radix) {
         // Initialization
         if (!radixInitialized) {
@@ -1477,6 +1486,10 @@ void MainWindow::onTimerTick(){
             }
         }
     }
+    //RADIX SORT ALGORITHM ENDS HERE
+
+
+    //GNOME SORT ALGORITHM STARTS HERE
     else if (currentAlgorithm == SortAlgorithm::Gnome) {
         if (gnomeIndex < array.size()) {
             int index1 = gnomeIndex;
@@ -1501,8 +1514,7 @@ void MainWindow::onTimerTick(){
             appendLog("Gnome Sort complete.");
         }
     }
-
-
+    //GNOME SORT ALGORITHM ENDS HERE
 }
 
 void MainWindow::updateScene() {
@@ -1694,10 +1706,8 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
             }
         }
 
-        // Draw bar
         scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(color));
 
-        // Draw value text
         QGraphicsTextItem* text = scene->addText(QString::number(array[k]));
         text->setPos(x, 200 + 5);
         x += 30;
