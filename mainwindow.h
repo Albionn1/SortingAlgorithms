@@ -128,7 +128,7 @@ private:
     QLabel* stepLabel;
     QPlainTextEdit* logView;
     QLabel* descriptionLabel;
-    QSpinBox* delayBox;
+    QSlider* delayBox;
     QComboBox* algorithmBox;
     QLabel* legendLabel;
     QPushButton* resetButton;
@@ -164,6 +164,7 @@ private:
 
 
     int currentStep = 0;
+    int stepDelay;
 
     void drawArray(const std::vector<int>& arr);
     void highlightComparison(int index1, int index2, int pivotIndex); //If the algorithm doesn't contain any pivot just pass -1 as the third argument so it doesn't throw errors

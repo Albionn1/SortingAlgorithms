@@ -29,10 +29,13 @@ MainWindow::MainWindow(QWidget *parent)
     nextStepButton = new QPushButton("Next Step");
     nextStepButton->setEnabled(false);
 
-    delayBox = new QSpinBox();
-    delayBox->setRange(50, 5000);
-    delayBox->setValue(500);
-    delayBox->setSuffix(" ms");
+    delayBox = new QSlider(Qt::Horizontal, this);
+    delayBox->setRange(100, 5000);
+    delayBox->setValue(1000);
+    delayBox->setTickInterval(100);
+    delayBox->setSingleStep(100);
+    delayBox->setPageStep(100);
+    delayBox->setToolTip("Adjust animation speed (ms delay)");
 
     inputField = new QLineEdit();
     inputField->setPlaceholderText("Enter numbers separated by spaces");
@@ -75,7 +78,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Layout: Delay + Step-by-step + Next
     QHBoxLayout* timingControls = new QHBoxLayout();
-    timingControls->addWidget(new QLabel("Delay:"));
+    timingControls->addWidget(new QLabel("Speed:"));
     timingControls->addWidget(delayBox);
     timingControls->addWidget(stepByStepCheck);
     timingControls->addWidget(nextStepButton);
@@ -119,7 +122,20 @@ MainWindow::MainWindow(QWidget *parent)
     connect(resetButton, &QPushButton::clicked, this, &MainWindow::onResetClicked);
     connect(stepByStepCheck, &QCheckBox::toggled, this, &MainWindow::onStepModeToggled);
     connect(nextStepButton, &QPushButton::clicked, this, &MainWindow::onTimerTick);
-    connect(slider, &QSlider::valueChanged, this, &MainWindow::onSliderMoved);
+    connect(delayBox, &QSlider::valueChanged, this, [&](int value) {
+
+        int snapped = (value / 100) * 100;
+        delayBox->setValue(snapped);
+
+        stepDelay = snapped;
+
+        if (timer->isActive()) {
+            timer->setInterval(stepDelay);
+        }
+        appendLog(QString("Speed set to %1 ms").arg(stepDelay));
+    });
+
+
     connect(randomButton, &QPushButton::clicked, this, &MainWindow::onRandomClicked);
     connect(algorithmBox, &QComboBox::currentTextChanged, this, &MainWindow::onAlgorithmSelected);
 
