@@ -11,12 +11,15 @@
 #include <QListWidget>
 #include <QBrush>
 #include <QColor>
+#include <QString>
+
+
 
 /*
  * Program: Sorting Algorithm Visualizer
  * Author: Albion Berisha
  *
- * (file header omitted for brevity)
+ *
  */
 
     MainWindow::MainWindow(QWidget* parent)
@@ -27,6 +30,7 @@
     QWidget* central = new QWidget(this);
     QVBoxLayout* layout = new QVBoxLayout(central);
 
+
     // Core widgets
     algorithmBox = new QComboBox();
     algorithmBox->addItems({ "Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort", "Radix Sort", "Gnome Sort" });
@@ -34,6 +38,29 @@
     startButton = new QPushButton("Start Sort");
     resetButton = new QPushButton("Reset to Default");
     randomButton = new QPushButton("Random Input");
+
+    // Size and distribution controls
+    sizeSpinBox = new QSpinBox();
+    sizeSpinBox->setRange(2, 200);
+    sizeSpinBox->setValue(20);
+    sizeSpinBox->setToolTip("Number of elements to generate for the array");
+
+    distributionBox = new QComboBox();
+    distributionBox->addItems({ "Random", "Sorted", "Reversed", "Nearly Sorted" });
+    distributionBox->setToolTip("Choose data distribution for generated array");
+
+    nearlySortedSlider = new QSlider(Qt::Horizontal, this);
+    nearlySortedSlider->setRange(0, 100);
+    nearlySortedSlider->setSingleStep(5);
+    nearlySortedSlider->setPageStep(5);
+    nearlySortedSlider->setTickInterval(5);
+    nearlySortedSlider->setTickPosition(QSlider::TicksBelow);
+    nearlySortedSlider->setValue(10);
+    nearlySortedSlider->setToolTip("Percent of elements to randomly swap in a nearly-sorted array");
+
+    nearlySortedSlider->setFixedWidth(150); // make the perturb slider smaller (~half)
+    nearlySortedValueLabel = new QLabel("10 %");
+    nearlySortedValueLabel->setFixedWidth(36);
 
     stepByStepCheck = new QCheckBox("Step-by-Step Mode");
     nextStepButton = new QPushButton("Next Step");
@@ -84,6 +111,13 @@
     sortControls->addWidget(algorithmBox);
     sortControls->addWidget(startButton);
     sortControls->addWidget(randomButton);
+    sortControls->addWidget(new QLabel("Size:"));
+    sortControls->addWidget(sizeSpinBox);
+    sortControls->addWidget(new QLabel("Distribution:"));
+    sortControls->addWidget(distributionBox);
+    sortControls->addWidget(new QLabel("Perturb:"));
+    sortControls->addWidget(nearlySortedSlider);
+    sortControls->addWidget(nearlySortedValueLabel);
     sortControls->addWidget(resetButton);
     layout->addLayout(sortControls);
 
@@ -170,7 +204,23 @@
 
 
     connect(randomButton, &QPushButton::clicked, this, &MainWindow::onRandomClicked);
+    connect(distributionBox, &QComboBox::currentTextChanged, this, &MainWindow::onControlsChanged);
+    connect(sizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &MainWindow::onControlsChanged);
+    connect(nearlySortedSlider, &QSlider::valueChanged, this, [&](int v){
+        nearlySortedValueLabel->setText(QString::number(v) + " %");
+        // Only regenerate when Nearly Sorted is selected; otherwise just update label
+        if (distributionBox->currentText() == "Nearly Sorted")
+            onControlsChanged();
+    });
+
+    // Initialize visibility/state of the perturb controls based on current distribution
+    bool isNearly = (distributionBox->currentText() == "Nearly Sorted");
+    nearlySortedSlider->setVisible(isNearly);
+    nearlySortedValueLabel->setVisible(isNearly);
+    nearlySortedSlider->setEnabled(isNearly);
+    nearlySortedValueLabel->setEnabled(isNearly);
     connect(algorithmBox, &QComboBox::currentTextChanged, this, &MainWindow::onAlgorithmSelected);
+    connect(slider, &QSlider::valueChanged, this, &MainWindow::onSliderMoved);
 
 }
 
@@ -217,7 +267,34 @@ void MainWindow::highlightPseudocodeLine(int index) {
     pseudocodeCurrent = index;
 }
 
-// Note: onAlgorithmSelected now also sets pseudocode per algorithm.
+// static QString complexityText(MainWindow::SortAlgorithm alg) {
+//     switch (alg) {
+//     case MainWindow::SortAlgorithm::Bubble:
+//         return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
+//     case MainWindow::SortAlgorithm::Insertion:
+//         return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
+//     case MainWindow::SortAlgorithm::Selection:
+//         return "Best Case: O(n^2)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
+//     case MainWindow::SortAlgorithm::Merge:
+//         return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
+//     case MainWindow::SortAlgorithm::Quick:
+//         return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n^2)";
+//     case MainWindow::SortAlgorithm::Heap:
+//         return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
+//     case MainWindow::SortAlgorithm::Shell:
+//         return "Best Case: O(n log n)\nAverage Case: O(n (log n)^2)\nWorst Case: O(n^2)";
+//     case MainWindow::SortAlgorithm::Tim:
+//         return "Best Case: O(n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
+//     case MainWindow::SortAlgorithm::Radix:
+//         return "Best Case: O(nk)\nAverage Case: O(nk)\nWorst Case: O(nk)";
+//     case MainWindow::SortAlgorithm::Gnome:
+//         return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
+//     default:
+//         return "";
+//     }
+// }
+
+// Note: onAlgorithmSelected also sets pseudocode per algorithm.
 void MainWindow::onAlgorithmSelected(const QString& selected) {
     // Clear existing legend items
     QLayoutItem* child;
@@ -244,7 +321,8 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Heapify Comparison"));
         legendLayout->addWidget(makeLegendItem("red", "Extraction Swap"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Element"));
-        descriptionLabel->setText("Heap Sort – An in-place, comparison-based algorithm that builds a binary heap and repeatedly extracts the maximum for O(n log n) performance.");
+        descriptionLabel->setText("Heap Sort – An in-place, comparison-based algorithm that builds a binary heap and repeatedly extracts the maximum.");
+        descriptionLabel->setText("- Best: O(n log n)- Average: O(n log n) - Worst: O(n log n)");
         setPseudocode({
             "1. Build max-heap from array",
             "2. For each node: heapify (compare and swap children)",
@@ -314,7 +392,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("purple", "Current Minimum"));
         legendLayout->addWidget(makeLegendItem("red", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Prefix"));
-        descriptionLabel->setText("Selection Sort - Finds the minimum and places it. Easy to understand, but always O(n²).");
+        descriptionLabel->setText("Selection Sort - Finds the minimum and places it. Easy to understand, but always O(n^2).");
         setPseudocode({
             "1. for i = 0 to n-2",
             "2.   min = i",
@@ -328,7 +406,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("royalblue", "Key Element"));
         legendLayout->addWidget(makeLegendItem("orange", "Gap Comparison"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted / Final"));
-        descriptionLabel->setText("Shell Sort – An adaptive, gap-based algorithm that generalizes insertion sort for faster O(n log² n) performance.");
+        descriptionLabel->setText("Shell Sort – An adaptive, gap-based algorithm that generalizes insertion sort for faster practical performance.");
         setPseudocode({
             "1. gap = n/2",
             "2. while gap > 0: do gapped insertion sort for gap",
@@ -341,7 +419,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("royalblue", "Key Element (Insertion in runs)"));
         legendLayout->addWidget(makeLegendItem("orange", "Comparison (Insertion/Merge)"));
         legendLayout->addWidget(makeLegendItem("green", "Placed / Sorted"));
-        descriptionLabel->setText("TimSort – A hybrid, stable algorithm that blends merge sort and insertion sort for adaptive O(n log n) performance.");
+        descriptionLabel->setText("TimSort – A hybrid, stable algorithm that blends merge sort and insertion sort for adaptive performance.");
         setPseudocode({
             "1. Break array into runs (e.g. 32)",
             "2. Insertion-sort each run",
@@ -380,21 +458,68 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
     }
 }
 
-//Generate 20 random numbers(1 to 100)
 void MainWindow::onRandomClicked() {
+    generateArrayFromControls(true);
+}
+
+void MainWindow::onControlsChanged() {
+    bool isNearly = (distributionBox && distributionBox->currentText() == "Nearly Sorted");
+    if (nearlySortedSlider) {
+        nearlySortedSlider->setVisible(isNearly);
+        nearlySortedSlider->setEnabled(isNearly);
+    }
+    if (nearlySortedValueLabel) {
+        nearlySortedValueLabel->setVisible(isNearly);
+        nearlySortedValueLabel->setEnabled(isNearly);
+    }
+
+    generateArrayFromControls(false);
+}
+
+void MainWindow::generateArrayFromControls(bool log) {
     array.clear();
+    displayedSortedIndices.clear();
     QStringList numbers;
 
-    for (int i = 0; i < 20; i++) {
-        int num = QRandomGenerator::global()->bounded(1, 101);
-        array.push_back(num);
-        numbers << QString::number(num);
+    int sz = 20;
+    if (sizeSpinBox) sz = sizeSpinBox->value();
+    QString dist = "Random";
+    if (distributionBox) dist = distributionBox->currentText();
+
+    // First generate a base random array
+    array.reserve(sz);
+    for (int k = 0; k < sz; ++k) {
+        int v = QRandomGenerator::global()->bounded(1, 101);
+        array.push_back(v);
     }
+
+    // Apply distribution
+    if (dist == "Sorted") {
+        std::sort(array.begin(), array.end());
+    }
+    else if (dist == "Reversed") {
+        std::sort(array.begin(), array.end(), std::greater<int>());
+    }
+    else if (dist == "Nearly Sorted") {
+        std::sort(array.begin(), array.end());
+        int percent = 10;
+        if (nearlySortedSlider) percent = nearlySortedSlider->value();
+        // number of swaps to perform = max(1, floor(sz * percent / 100))
+        int swaps = std::max(1, (sz * percent) / 100);
+        for (int s = 0; s < swaps; ++s) {
+            int a = QRandomGenerator::global()->bounded(0, sz);
+            int b = QRandomGenerator::global()->bounded(0, sz);
+            if (a == b) continue;
+            std::swap(array[a], array[b]);
+        }
+    }
+
+    for (int v : array) numbers << QString::number(v);
     inputField->setText(numbers.join(" "));
     scene->clear();
     drawArray(array);
 
-    appendLog("Generated random input: " + inputField->text());
+    if (log) appendLog(QString("Generated %1 input (%2): %3").arg(sz).arg(dist).arg(inputField->text()));
 }
 
 void MainWindow::onSliderMoved(int value) {
@@ -403,6 +528,34 @@ void MainWindow::onSliderMoved(int value) {
     array = history[value];
     drawArray(array);
     currentStep = value;
+
+    displayedSortedIndices.clear();
+    if (value < static_cast<int>(sortedIndicesHistory.size())) {
+        displayedSortedIndices = sortedIndicesHistory[value];
+    }
+    else if (!history.empty()) {
+        const std::vector<int>& finalArr = history.back();
+        if (value < static_cast<int>(history.size())) {
+            for (int idx = 0; idx < static_cast<int>(array.size()) && idx < static_cast<int>(finalArr.size()); ++idx) {
+                if (array[idx] == finalArr[idx]) displayedSortedIndices.insert(idx);
+            }
+        }
+    }
+
+    if (value < static_cast<int>(radixPhaseHistory.size())) radixPhase = radixPhaseHistory[value];
+    if (value < static_cast<int>(radixIndexHistory.size())) radixIndex = radixIndexHistory[value];
+    // Restore shell per-frame state
+    if (value < static_cast<int>(shellIHistory.size())) shellI = shellIHistory[value];
+    if (value < static_cast<int>(shellJHistory.size())) shellJ = shellJHistory[value];
+    if (value < static_cast<int>(shellInsertingHistory.size())) shellInserting = (shellInsertingHistory[value] != 0);
+    // Restore tim per-frame state
+    if (value < static_cast<int>(timIHistory.size())) timI = timIHistory[value];
+    if (value < static_cast<int>(timJHistory.size())) timJ = timJHistory[value];
+    if (value < static_cast<int>(timInsertingHistory.size())) timInserting = (timInsertingHistory[value] != 0);
+    if (value < static_cast<int>(timMergingHistory.size())) timMerging = (timMergingHistory[value] != 0);
+    if (value < static_cast<int>(timLeftHistory.size())) timLeft = timLeftHistory[value];
+    if (value < static_cast<int>(timMidHistory.size())) timMid = timMidHistory[value];
+    if (value < static_cast<int>(timRightHistory.size())) timRight = timRightHistory[value];
 
     if (currentAlgorithm == SortAlgorithm::Quick) {
         if (value < pivotHistory.size() &&
@@ -444,6 +597,17 @@ void MainWindow::onSliderMoved(int value) {
         }
     }
 
+    // General fallback: if specific algorithm handlers didn't highlight, use stored histories
+    if (!(currentAlgorithm == SortAlgorithm::Quick) && !(currentAlgorithm == SortAlgorithm::Merge) && !(currentAlgorithm == SortAlgorithm::Heap)) {
+        int ii = -1, jj = -1, pv = -1;
+        if (value < static_cast<int>(iHistory.size())) ii = iHistory[value];
+        if (value < static_cast<int>(jHistory.size())) jj = jHistory[value];
+        if (value < static_cast<int>(pivotHistory.size())) pv = pivotHistory[value];
+        if (ii != -1 || jj != -1 || pv != -1) {
+            highlightComparison(ii, jj, pv);
+        }
+    }
+
     stepLabel->setText(QString("Step %1 / %2").arg(value).arg(history.size() - 1));
 }
 
@@ -463,22 +627,79 @@ void MainWindow::onStepModeToggled(bool checked) {
 
 void MainWindow::onResetClicked() {
 
-    inputField->setText("58 12 91 7 34 76 25 63 89 3 47 68 20 99 14 55 81 39 6 72");
-    array.clear();
+    timer->stop();
+
     scene->clear();
     stepLabel->clear();
     logView->clear();
+
     history.clear();
     pivotHistory.clear();
     iHistory.clear();
     jHistory.clear();
+
+    sortedIndicesHistory.clear();
+    radixPhaseHistory.clear();
+    radixIndexHistory.clear();
+    shellIHistory.clear();
+    shellJHistory.clear();
+    shellInsertingHistory.clear();
+    timIHistory.clear();
+    timJHistory.clear();
+    timInsertingHistory.clear();
+    timMergingHistory.clear();
+    timLeftHistory.clear();
+    timMidHistory.clear();
+    timRightHistory.clear();
+    mergeLeftStartHistory.clear();
+    mergeLeftEndHistory.clear();
+    mergeRightStartHistory.clear();
+    mergeRightEndHistory.clear();
+    mergeMergedStartHistory.clear();
+    mergeMergedEndHistory.clear();
+
+    displayedSortedIndices.clear();
+    sortedIndices.clear();
+
     slider->setValue(0);
     slider->setMaximum(0);
     currentStep = 0;
 
-    timer->stop();
-    drawArray(array);
-    appendLog("Reset to default.");
+    i = j = -1;
+    quickStack.clear(); quickI = quickJ = quickPivot = -1; pivotValue = -1;
+    mergeStack = {};
+    mergeBuffer.clear(); merging = false;
+    mergeLeft = mergeMid = mergeRight = -1;
+    mergeI = mergeJ = mergeK = -1;
+    mergeLeftStart = mergeLeftEnd = mergeRightStart = mergeRightEnd = mergeMergedStart = mergeMergedEnd = -1;
+
+    heapStack = std::stack<int>(); heapBuilding = false; heapSwapping = false; heapI = heapJ = -1; heapSize = 0;
+
+    gap = (sizeSpinBox) ? (sizeSpinBox->value() / 2) : 0;
+    shellI = shellJ = -1; shellInserting = false;
+
+    timRuns.clear(); timInserting = false; timMerging = false; timStart = timEnd = timI = timJ = -1;
+    timLeft = timMid = timRight = -1; timMergeBuffer.clear();
+
+    radixInitialized = false; digitPlace = 1; radixIndex = 0; radixPhase = RadixPhase::Count; std::fill(count.begin(), count.end(), 0); bucket.clear();
+
+    gnomeIndex = 0;
+
+    array.clear();
+    QStringList numberStrings = inputField->text().split(" ", Qt::SkipEmptyParts);
+    for (const QString& numStr : numberStrings) {
+        bool ok;
+        int num = numStr.toInt(&ok);
+        if (ok) array.push_back(num);
+    }
+
+    if (array.empty()) {
+        generateArrayFromControls(false);
+    } else {
+        drawArray(array);
+    }
+
+    appendLog("Reset state (preserved algorithm & input).");
     highlightPseudocodeLine(-1);
 }
 
@@ -490,9 +711,22 @@ void MainWindow::onStartClicked() {
     pivotHistory.clear();
     iHistory.clear();
     jHistory.clear();
+    // Clear any per-frame recorded histories
+    sortedIndicesHistory.clear();
+    radixPhaseHistory.clear();
+    radixIndexHistory.clear();
+    mergeLeftStartHistory.clear();
+    mergeLeftEndHistory.clear();
+    mergeRightStartHistory.clear();
+    mergeRightEndHistory.clear();
+    mergeMergedStartHistory.clear();
+    mergeMergedEndHistory.clear();
     slider->setValue(0);
     slider->setMaximum(0);
     currentStep = 0;
+
+    // Clear any scrubbing overlay so live sort starts with actual state
+    displayedSortedIndices.clear();
 
     array.clear();
     QStringList numberStrings = inputField->text().split(" ", Qt::SkipEmptyParts);
@@ -739,7 +973,9 @@ void MainWindow::onStartClicked() {
 }
 
 void MainWindow::onTimerTick() {
-    //BUBBLE ALGORITHM STARTS HERE
+    // Clear any scrubbing overlay so live state controls highlighting
+    displayedSortedIndices.clear();
+    // Bubble sort step
     if (currentAlgorithm == SortAlgorithm::Bubble) {
         if (i < static_cast<int>(array.size())) {
             if (j < static_cast<int>(array.size()) - i - 1) {
@@ -748,10 +984,8 @@ void MainWindow::onTimerTick() {
 
                 appendLog(QString("Comparing positions %1 and %2 (%3 vs %4).").arg(j).arg(j + 1).arg(array[j]).arg(array[j + 1]));
 
-                history.push_back(array);
-                currentStep = static_cast<int>(history.size()) - 1;
-                slider->setMaximum(currentStep);
-                slider->setValue(currentStep);
+                // Record this comparison frame with indices so scrubbing can show highlights
+                pushFrame(array, j, j + 1, -1);
 
                 appendLog(stepLabel->text());
 
@@ -806,9 +1040,9 @@ void MainWindow::onTimerTick() {
         }
 
     }
-    //BUBBLE ALGORITHMS ENDS HERE
+    // End bubble sort
 
-    //INSERTION ALGORITHM STARTS HERE
+    // Insertion sort step
     else if (currentAlgorithm == SortAlgorithm::Insertion) {
         if (i < static_cast<int>(array.size())) {
             if (!inserting) {
@@ -816,10 +1050,7 @@ void MainWindow::onTimerTick() {
                 j = i - 1;
                 inserting = true;
 
-                history.push_back(array);
-                currentStep = static_cast<int>(history.size()) - 1;
-                slider->setMaximum(currentStep);
-                slider->setValue(currentStep);
+                pushFrame(array, i, -1, -1);
 
                 appendLog(QString("Taking key = %1 at index %2").arg(key).arg(i));
                 appendLog(stepLabel->text());
@@ -833,10 +1064,7 @@ void MainWindow::onTimerTick() {
                 if (j >= 0 && array[j] > key) {
                     appendLog(QString("Shifting %1 right (index %2)").arg(array[j]).arg(j));
 
-                    history.push_back(array);
-                    currentStep = static_cast<int>(history.size()) - 1;
-                    slider->setMaximum(currentStep);
-                    slider->setValue(currentStep);
+                    pushFrame(array, j, j + 1, -1);
 
                     appendLog(stepLabel->text());
                     array[j + 1] = array[j];
@@ -849,10 +1077,7 @@ void MainWindow::onTimerTick() {
                     return;
                 }
                 else {
-                    history.push_back(array);
-                    currentStep = static_cast<int>(history.size()) - 1;
-                    slider->setMaximum(currentStep);
-                    slider->setValue(currentStep);
+                    pushFrame(array, j + 1, -1, -1);
 
                     array[j + 1] = key;
                     appendLog(QString("Inserting key %1 at index %2").arg(key).arg(j + 1));
@@ -884,20 +1109,17 @@ void MainWindow::onTimerTick() {
             highlightComparison(-1, -1, -1);
 
             drawArrayFinished(array);
-        }//INSERTION ALGORITHM ENDS HERE
+        }// End insertion sort
 
     }
 
 
-    //SELECTION ALGORITHM STARTS HERE
+    // Selection sort step
     else if (currentAlgorithm == SortAlgorithm::Selection) {
         if (i < static_cast<int>(array.size()) - 1) {
             if (j < static_cast<int>(array.size())) {
 
-                history.push_back(array);
-                currentStep = static_cast<int>(history.size()) - 1;
-                slider->setMaximum(currentStep);
-                slider->setValue(currentStep);
+                pushFrame(array, j, minIndex, -1);
 
 
                 appendLog(QString("Comparing index %1 (%2) with current min index %3 (%4)")
@@ -946,9 +1168,9 @@ void MainWindow::onTimerTick() {
 
     }
 
-    //SELECTION ALGORITHM ENDS HERE
+    // End selection sort
 
-    //QUICKSORT ALGORITHM STARTS HERE
+    // Quick sort step
 
     else if (currentAlgorithm == SortAlgorithm::Quick) {
         while (!quickStack.isEmpty() && quickI == -1 && quickJ == -1) {
@@ -968,13 +1190,7 @@ void MainWindow::onTimerTick() {
                 highlightPseudocodeLine(0);
                 highlightComparison(-1, -1, quickRight);
 
-                history.push_back(array);
-                pivotHistory.push_back(quickRight);
-                iHistory.push_back(quickI);
-                jHistory.push_back(quickJ);
-                currentStep = static_cast<int>(history.size()) - 1;
-                slider->setMaximum(currentStep);
-                slider->setValue(currentStep);
+                pushFrame(array, quickI, quickJ, quickRight);
                 return;
             }
         }
@@ -985,15 +1201,7 @@ void MainWindow::onTimerTick() {
             // pseudocode: comparing line
             highlightPseudocodeLine(1);
             highlightComparison(quickJ, quickRight, quickRight);
-
-
-            history.push_back(array);
-            pivotHistory.push_back(quickRight);
-            iHistory.push_back(quickI);
-            jHistory.push_back(quickJ);
-            currentStep = static_cast<int>(history.size()) - 1;
-            slider->setMaximum(currentStep);
-            slider->setValue(currentStep);
+            pushFrame(array, quickI, quickJ, quickRight);
 
             if (array[quickJ] < pivotValue) {
                 quickI++;
@@ -1004,13 +1212,7 @@ void MainWindow::onTimerTick() {
                 // pseudocode: swap occurred (line 2)
                 highlightPseudocodeLine(2);
 
-                history.push_back(array);
-                pivotHistory.push_back(quickRight);
-                iHistory.push_back(quickI);
-                jHistory.push_back(quickJ);
-                currentStep = static_cast<int>(history.size()) - 1;
-                slider->setMaximum(currentStep);
-                slider->setValue(currentStep);
+                pushFrame(array, quickI, quickJ, quickRight);
             }
             quickJ++;
             if (stepMode) {
@@ -1035,13 +1237,7 @@ void MainWindow::onTimerTick() {
             quickI = quickJ = quickPivot = -1;
             pivotValue = -1;
 
-            history.push_back(array);
-            pivotHistory.push_back(pivotIndex);
-            iHistory.push_back(quickI);
-            jHistory.push_back(quickJ);
-            currentStep = static_cast<int>(history.size()) - 1;
-            slider->setMaximum(currentStep);
-            slider->setValue(currentStep);
+            pushFrame(array, quickI, quickJ, pivotIndex);
 
             // pseudocode: placing pivot (line 3)
             highlightPseudocodeLine(3);
@@ -1060,10 +1256,10 @@ void MainWindow::onTimerTick() {
             highlightPseudocodeLine(4);
         }
     }
-    //QUICKSORT ALGORITHM ENDS HERE
+    // End quick sort
 
 
-    //MERGE SORT ALGORITHM STARTS HERE
+    // Merge sort
     else if (currentAlgorithm == SortAlgorithm::Merge) {
         if (!mergeStack.empty()) {
             appendLog(QString("mergeStack size: %1").arg(mergeStack.size()));
@@ -1086,14 +1282,7 @@ void MainWindow::onTimerTick() {
                         mergeMergedStartHistory.push_back(mergeMergedStart);
                         mergeMergedEndHistory.push_back(mergeMergedEnd);
 
-                        history.push_back(array);
-                        iHistory.push_back(-1);
-                        jHistory.push_back(-1);
-                        pivotHistory.push_back(-1);
-
-                        currentStep = static_cast<int>(history.size()) - 1;
-                        slider->setMaximum(currentStep);
-                        slider->setValue(currentStep);
+                        pushFrame(array, -1, -1, -1);
                     }
                     return;
                 }
@@ -1137,10 +1326,7 @@ void MainWindow::onTimerTick() {
                     mergeMergedStartHistory.push_back(mergeMergedStart);
                     mergeMergedEndHistory.push_back(mergeMergedEnd);
 
-                    history.push_back(array);
-                    iHistory.push_back(-1);
-                    jHistory.push_back(-1);
-                    pivotHistory.push_back(-1);
+                    pushFrame(array, -1, -1, -1);
 
                 }
                 else {
@@ -1152,13 +1338,7 @@ void MainWindow::onTimerTick() {
                     mergeRightEndHistory.push_back(mergeRightEnd);
                     mergeMergedStartHistory.push_back(mergeMergedStart);
                     mergeMergedEndHistory.push_back(mergeMergedEnd);
-
-                    history.push_back(array);
-                    iHistory.push_back(-1);
-                    jHistory.push_back(-1);
-                    pivotHistory.push_back(-1);
-
-
+                    pushFrame(array, -1, -1, -1);
                 }
             }
             else if (mergeI <= mergeMid) {
@@ -1172,14 +1352,7 @@ void MainWindow::onTimerTick() {
                 mergeMergedStartHistory.push_back(mergeMergedStart);
                 mergeMergedEndHistory.push_back(mergeMergedEnd);
 
-                history.push_back(array);
-                iHistory.push_back(-1);
-                jHistory.push_back(-1);
-                pivotHistory.push_back(-1);
-
-                currentStep = static_cast<int>(history.size()) - 1;
-                slider->setMaximum(currentStep);
-                slider->setValue(currentStep);
+                pushFrame(array, -1, -1, -1);
             }
 else if (mergeJ <= mergeRight) {
                 highlightComparison(-1, mergeJ, -1);
@@ -1192,14 +1365,7 @@ else if (mergeJ <= mergeRight) {
                 mergeMergedStartHistory.push_back(mergeMergedStart);
                 mergeMergedEndHistory.push_back(mergeMergedEnd);
 
-                history.push_back(array);
-                iHistory.push_back(-1);
-                jHistory.push_back(-1);
-                pivotHistory.push_back(-1);
-
-                currentStep = static_cast<int>(history.size()) - 1;
-                slider->setMaximum(currentStep);
-                slider->setValue(currentStep);
+                pushFrame(array, -1, -1, -1);
             }
             else {
                 for (int i = mergeLeft; i <= mergeRight; ++i)
@@ -1214,14 +1380,7 @@ else if (mergeJ <= mergeRight) {
                 mergeMergedStartHistory.push_back(mergeMergedStart);
                 mergeMergedEndHistory.push_back(mergeMergedEnd);
 
-                history.push_back(array);
-                iHistory.push_back(-1);
-                jHistory.push_back(-1);
-                pivotHistory.push_back(-1);
-
-                currentStep = static_cast<int>(history.size()) - 1;
-                slider->setMaximum(currentStep);
-                slider->setValue(currentStep);
+                pushFrame(array, -1, -1, -1);
 
                 appendLog(QString("Merged [%1, %2]").arg(mergeLeft).arg(mergeRight));
 
@@ -1242,9 +1401,9 @@ else if (mergeJ <= mergeRight) {
                 }
             }
         }
-    }    //MERGE SORT ALGORITHM ENDS HERE
+    }    // End merge sort
 
-        //HEAP SORT ALGORITHM STARTS HERE
+        // Heap sort
 
     else if (currentAlgorithm == SortAlgorithm::Heap) {
         if (heapBuilding) {
@@ -1370,10 +1529,10 @@ else if (mergeJ <= mergeRight) {
             }
         }
     }
-    //HEAP SORT ALGORITHM ENDS HERE
+    // End heap sort
 
 
-    //SHELL SORT ALGORITHM STARTS HERE
+    // Shell sort
     else if (currentAlgorithm == SortAlgorithm::Shell) {
         if (gap > 0) {
             if (shellI < static_cast<int>(array.size())) {
@@ -1396,10 +1555,7 @@ else if (mergeJ <= mergeRight) {
                     array[shellJ] = array[shellJ - gap];
                     shellJ -= gap;
 
-                    history.push_back(array);
-                    currentStep = static_cast<int>(history.size()) - 1;
-                    slider->setMaximum(currentStep);
-                    slider->setValue(currentStep);
+                    pushFrame(array, shellJ, shellJ + gap, -1);
 
                     // pseudocode: shifting in gapped insertion
                     highlightPseudocodeLine(2);
@@ -1445,10 +1601,10 @@ else if (mergeJ <= mergeRight) {
             highlightPseudocodeLine(3);
         }
     }
-    //SHELL SORT ALGORITHM ENDS HERE
+    // End shell sort
 
 
-    // TIM SORT ALGORITHM STARTS HERE
+    // TimSort (insertion then merge)
     else if (currentAlgorithm == SortAlgorithm::Tim) {
         if (timInserting) {
             if (timStart < (int)array.size()) {
@@ -1464,10 +1620,7 @@ else if (mergeJ <= mergeRight) {
                         array[timJ] = array[timJ - 1];
                         timJ--;
 
-                        history.push_back(array);
-                        currentStep = (int)history.size() - 1;
-                        slider->setMaximum(currentStep);
-                        slider->setValue(currentStep);
+                        pushFrame(array, timJ, timJ + 1, -1);
 
                         // pseudocode: insertion in run
                         highlightPseudocodeLine(1);
@@ -1576,10 +1729,7 @@ else if (mergeJ <= mergeRight) {
                         array[k++] = array[j++];
                     }
 
-                    history.push_back(array);
-                    currentStep = (int)history.size() - 1;
-                    slider->setMaximum(currentStep);
-                    slider->setValue(currentStep);
+                    pushFrame(array, i + timLeft, j, -1);
 
                     highlightComparison(i + timLeft, j, -1);
                     // pseudocode: merging runs
@@ -1610,10 +1760,10 @@ else if (mergeJ <= mergeRight) {
             }
         }
         }
-    //TIM SORT ALGORITHM ENDS HERE
+    // End TimSort
 
 
-    //RADIX SORT ALGORITHM STARTS HERE
+    // Radix sort
     else if (currentAlgorithm == SortAlgorithm::Radix) {
         // Initialization
         if (!radixInitialized) {
@@ -1747,10 +1897,10 @@ else if (mergeJ <= mergeRight) {
             }
         }
     }
-    //RADIX SORT ALGORITHM ENDS HERE
+    // End radix sort
 
 
-    //GNOME SORT ALGORITHM STARTS HERE
+    // Gnome sort
     else if (currentAlgorithm == SortAlgorithm::Gnome) {
         if (gnomeIndex < array.size()) {
             int index1 = gnomeIndex;
@@ -1782,7 +1932,7 @@ else if (mergeJ <= mergeRight) {
             highlightPseudocodeLine(4);
         }
     }
-    //GNOME SORT ALGORITHM ENDS HERE
+    // End gnome sort
 }
 
 void MainWindow::updateScene() {
@@ -1793,6 +1943,9 @@ void MainWindow::updateScene() {
     int maxVal = *std::max_element(array.begin(), array.end());
     int maxBarHeight = 150;
     int x = 10;
+
+    const QSet<int>* activeSorted = displayedSortedIndices.isEmpty() ? &sortedIndices : &displayedSortedIndices;
+
 
     for (size_t index = 0; index < array.size(); ++index) {
         int val = array[index];
@@ -1807,7 +1960,7 @@ void MainWindow::updateScene() {
         else if (currentAlgorithm == SortAlgorithm::Quick && index == quickPivot) {
             color = Qt::yellow;
         }
-        else if (sortedIndices.contains(static_cast<int>(index))) {
+        else if (activeSorted->contains(static_cast<int>(index))) {
             color = Qt::green;
         }
 
@@ -1877,6 +2030,8 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
     int maxVal = *std::max_element(array.begin(), array.end());
     int maxBarHeight = 150;
     int x = 10;
+
+    const QSet<int>* activeSorted = displayedSortedIndices.isEmpty() ? &sortedIndices : &displayedSortedIndices;
 
     // Build a concise step description to display above the bars.
     QString stepMsg;
@@ -1979,7 +2134,7 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(186, 85, 211);
             else if (k == index1 || k == index2)
                 color = QColor(30, 144, 255);
-            else if (sortedIndices.contains(k))
+            else if (activeSorted->contains(k))
                 color = QColor(0, 255, 0);
         }
 
@@ -1988,14 +2143,14 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(255, 165, 0);
             else if (k == index2)
                 color = QColor(255, 0, 0);
-            else if (sortedIndices.contains(k))
+            else if (activeSorted->contains(k))
                 color = QColor(0, 255, 0);
         }
 
         if (currentAlgorithm == SortAlgorithm::Bubble) {
             if (k == index1 || k == index2)
                 color = QColor(220, 20, 60);
-            else if (sortedIndices.contains(k))
+            else if (activeSorted->contains(k))
                 color = QColor(0, 255, 0);
         }
 
@@ -2004,7 +2159,7 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(65, 105, 225);
             else if (k == index2)
                 color = QColor(255, 165, 0);
-            else if (sortedIndices.contains(k))
+            else if (activeSorted->contains(k))
                 color = QColor(0, 255, 0);
         }
 
@@ -2013,7 +2168,7 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(128, 0, 128);
             else if (k == index2)
                 color = QColor(255, 0, 0);
-            else if (sortedIndices.contains(k))
+            else if (activeSorted->contains(k))
                 color = QColor(0, 255, 0);
         }
         if (currentAlgorithm == SortAlgorithm::Shell) {
@@ -2021,7 +2176,7 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
                 color = QColor(65, 105, 225);
             else if (shellInserting && (k == shellJ || k == shellJ + gap))
                 color = QColor(255, 165, 0);
-            else if (sortedIndices.contains(k))
+            else if (activeSorted->contains(k))
                 color = QColor(0, 255, 0);
         }
         if (currentAlgorithm == SortAlgorithm::Tim) {
@@ -2030,7 +2185,7 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
             else if ((timInserting && (k == timJ || k == timJ + 1)) ||
                 (timMerging && (k == timLeft || k == timMid)))
                 color = QColor(255, 165, 0);
-            else if (sortedIndices.contains(k))
+            else if (activeSorted->contains(k))
                 color = QColor(0, 255, 0);
         }
         if (currentAlgorithm == SortAlgorithm::Radix) {
@@ -2052,7 +2207,7 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
             else if (k == index2) {
                 color = QColor(0, 255, 255);
             }
-            else if (sortedIndices.contains(k)) {
+            else if (activeSorted->contains(k)) {
                 color = QColor(0, 255, 0);
             }
         }

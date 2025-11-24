@@ -10,6 +10,7 @@
 #include <QTimer>
 #include <QLabel>
 #include <QPlainTextEdit>
+#include <QSlider>
 #include <QSpinBox>
 #include <QComboBox>
 #include <QStack>
@@ -36,6 +37,7 @@ public:
     MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
+    enum class SortAlgorithm { Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim, Radix, Gnome };
 private slots:
     void onStartClicked();
     void onTimerTick();
@@ -44,12 +46,13 @@ private slots:
     void onSliderMoved(int value);
     void onRandomClicked();
     void onAlgorithmSelected(const QString& selected);
+    void onControlsChanged();
 
 private:
 
-    enum class SortAlgorithm { Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim, Radix, Gnome };
-    SortAlgorithm currentAlgorithm;
 
+
+    SortAlgorithm currentAlgorithm;
     //Sorting state
     int i = 0, j = 0, key = 0, minIndex = 0;
 
@@ -111,6 +114,23 @@ private:
         iHistory.push_back(i);
         jHistory.push_back(j);
         pivotHistory.push_back(pivot);
+        // record which indices are currently considered sorted (snapshot)
+        sortedIndicesHistory.push_back(sortedIndices);
+        // record radix-specific state for this frame
+        radixPhaseHistory.push_back(radixPhase);
+        radixIndexHistory.push_back(radixIndex);
+        // record shell per-frame state
+        shellIHistory.push_back(shellI);
+        shellJHistory.push_back(shellJ);
+        shellInsertingHistory.push_back(shellInserting ? 1 : 0);
+        // record tim per-frame state
+        timIHistory.push_back(timI);
+        timJHistory.push_back(timJ);
+        timInsertingHistory.push_back(timInserting ? 1 : 0);
+        timMergingHistory.push_back(timMerging ? 1 : 0);
+        timLeftHistory.push_back(timLeft);
+        timMidHistory.push_back(timMid);
+        timRightHistory.push_back(timRight);
         {
             QSignalBlocker block(slider);
             int step = static_cast<int>(history.size()) - 1;
@@ -146,6 +166,12 @@ private:
     QLabel* stepCounterLabel;
     QLabel* stepDescriptionLabel;
     QPushButton* randomButton;
+    QSpinBox* sizeSpinBox;
+    QComboBox* distributionBox;
+    QSlider* nearlySortedSlider;
+    QLabel* nearlySortedValueLabel;
+
+    void generateArrayFromControls(bool log = true);
     QGraphicsTextItem* complexityLabel = nullptr;
     QLabel* legendTitleLabel;
 
@@ -160,7 +186,23 @@ private:
     std::vector<int> pivotHistory;
     std::vector<int> iHistory;
     std::vector<int> jHistory;
+    std::vector<QSet<int>> sortedIndicesHistory;
+    std::vector<RadixPhase> radixPhaseHistory;
+    std::vector<int> radixIndexHistory;
+    // Shell sort per-frame state
+    std::vector<int> shellIHistory;
+    std::vector<int> shellJHistory;
+    std::vector<int> shellInsertingHistory;
+    // Tim sort per-frame state
+    std::vector<int> timIHistory;
+    std::vector<int> timJHistory;
+    std::vector<int> timInsertingHistory;
+    std::vector<int> timMergingHistory;
+    std::vector<int> timLeftHistory;
+    std::vector<int> timMidHistory;
+    std::vector<int> timRightHistory;
     QSet<int> sortedIndices;
+    QSet<int> displayedSortedIndices; // used when scrubbing history to show per-frame sorted state
     std::vector<int> mergeLeftStartHistory;
     std::vector<int> mergeLeftEndHistory;
     std::vector<int> mergeRightStartHistory;
