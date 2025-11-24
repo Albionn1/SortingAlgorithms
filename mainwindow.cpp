@@ -91,6 +91,9 @@
     descriptionLabel = new QLabel();
     descriptionLabel->setWordWrap(true);
 
+    bigoDescriptionLabel = new QLabel();
+    bigoDescriptionLabel->setText("Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)");
+
     descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted."); //DEFAULT STARTING ALGORITHM
 
     slider = new QSlider(Qt::Horizontal);
@@ -170,6 +173,7 @@
     rightCol->addWidget(new QLabel("Log"));
     rightCol->addWidget(logView, /*stretch=*/2);
     rightCol->addWidget(descriptionLabel);
+    rightCol->addWidget(bigoDescriptionLabel);
 
     QWidget* rightWidget = new QWidget();
     rightWidget->setLayout(rightCol);
@@ -267,32 +271,32 @@ void MainWindow::highlightPseudocodeLine(int index) {
     pseudocodeCurrent = index;
 }
 
-// static QString complexityText(MainWindow::SortAlgorithm alg) {
-//     switch (alg) {
-//     case MainWindow::SortAlgorithm::Bubble:
-//         return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
-//     case MainWindow::SortAlgorithm::Insertion:
-//         return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
-//     case MainWindow::SortAlgorithm::Selection:
-//         return "Best Case: O(n^2)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
-//     case MainWindow::SortAlgorithm::Merge:
-//         return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
-//     case MainWindow::SortAlgorithm::Quick:
-//         return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n^2)";
-//     case MainWindow::SortAlgorithm::Heap:
-//         return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
-//     case MainWindow::SortAlgorithm::Shell:
-//         return "Best Case: O(n log n)\nAverage Case: O(n (log n)^2)\nWorst Case: O(n^2)";
-//     case MainWindow::SortAlgorithm::Tim:
-//         return "Best Case: O(n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
-//     case MainWindow::SortAlgorithm::Radix:
-//         return "Best Case: O(nk)\nAverage Case: O(nk)\nWorst Case: O(nk)";
-//     case MainWindow::SortAlgorithm::Gnome:
-//         return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
-//     default:
-//         return "";
-//     }
-// }
+static QString complexityText(MainWindow::SortAlgorithm alg) {
+    switch (alg) {
+        case MainWindow::SortAlgorithm::Bubble:
+            return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
+        case MainWindow::SortAlgorithm::Insertion:
+            return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
+        case MainWindow::SortAlgorithm::Selection:
+            return "Best Case: O(n^2)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
+        case MainWindow::SortAlgorithm::Merge:
+            return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
+        case MainWindow::SortAlgorithm::Quick:
+            return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n^2)";
+        case MainWindow::SortAlgorithm::Heap:
+            return "Best Case: O(n log n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
+        case MainWindow::SortAlgorithm::Shell:
+            return "Best Case: O(n log n)\nAverage Case: O(n (log n)^2)\nWorst Case: O(n^2)";
+        case MainWindow::SortAlgorithm::Tim:
+            return "Best Case: O(n)\nAverage Case: O(n log n)\nWorst Case: O(n log n)";
+        case MainWindow::SortAlgorithm::Radix:
+            return "Best Case: O(nk)\nAverage Case: O(nk)\nWorst Case: O(nk)";
+        case MainWindow::SortAlgorithm::Gnome:
+            return "Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)";
+        default:
+            return "";
+    }
+}
 
 // Note: onAlgorithmSelected also sets pseudocode per algorithm.
 void MainWindow::onAlgorithmSelected(const QString& selected) {
@@ -322,7 +326,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("red", "Extraction Swap"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Element"));
         descriptionLabel->setText("Heap Sort – An in-place, comparison-based algorithm that builds a binary heap and repeatedly extracts the maximum.");
-        descriptionLabel->setText("- Best: O(n log n)- Average: O(n log n) - Worst: O(n log n)");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Heap));
         setPseudocode({
             "1. Build max-heap from array",
             "2. For each node: heapify (compare and swap children)",
@@ -336,6 +340,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("dodgerblue", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted"));
         descriptionLabel->setText("Quick Sort - Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Quick));
         setPseudocode({
             "1. Choose pivot (rightmost)",
             "2. Partition: for j=left..right-1 compare with pivot; if less swap",
@@ -350,6 +355,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("deeppink", "Right Half"));
         legendLayout->addWidget(makeLegendItem("green", "Merged Output"));
         descriptionLabel->setText("Merge Sort – A stable, divide-and-conquer algorithm that recursively splits and merges arrays for guaranteed O(n log n) performance.");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Merge));
         setPseudocode({
             "1. If left >= right return",
             "2. mid = (left+right)/2",
@@ -364,6 +370,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("crimson", "Current Comparison"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Tail"));
         descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted.");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Bubble));
         setPseudocode({
             "1. for i = 0 to n-1",
             "2.   for j = 0 to n-i-2",
@@ -379,6 +386,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Comparing Position"));
         legendLayout->addWidget(makeLegendItem("green", "Inserted / Sorted"));
         descriptionLabel->setText("Insertion Sort - Builds the sorted array one item at a time. Fast on nearly sorted data.");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Insertion));
         setPseudocode({
             "1. for i = 1 to n-1",
             "2.   key = A[i]; j = i-1",
@@ -393,6 +401,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("red", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Prefix"));
         descriptionLabel->setText("Selection Sort - Finds the minimum and places it. Easy to understand, but always O(n^2).");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Selection));
         setPseudocode({
             "1. for i = 0 to n-2",
             "2.   min = i",
@@ -407,6 +416,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Gap Comparison"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted / Final"));
         descriptionLabel->setText("Shell Sort – An adaptive, gap-based algorithm that generalizes insertion sort for faster practical performance.");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Shell));
         setPseudocode({
             "1. gap = n/2",
             "2. while gap > 0: do gapped insertion sort for gap",
@@ -420,6 +430,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Comparison (Insertion/Merge)"));
         legendLayout->addWidget(makeLegendItem("green", "Placed / Sorted"));
         descriptionLabel->setText("TimSort – A hybrid, stable algorithm that blends merge sort and insertion sort for adaptive performance.");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Tim));
         setPseudocode({
             "1. Break array into runs (e.g. 32)",
             "2. Insertion-sort each run",
@@ -433,6 +444,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("orange", "Bucket Placement"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Output"));
         descriptionLabel->setText("Radix Sort – A non-comparative, stable algorithm that sorts digit by digit using counting sort.");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Radix));
         setPseudocode({
             "1. For digitPlace = 1; digitPlace <= max; digitPlace *= 10:",
             "2.   count digits at digitPlace",
@@ -448,6 +460,7 @@ void MainWindow::onAlgorithmSelected(const QString& selected) {
         legendLayout->addWidget(makeLegendItem("cyan", "Neighbor Being Compared"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted Section"));
         descriptionLabel->setText("Gnome Sort – A simple algorithm that moves elements back and forth like a garden gnome tidying a line.");
+        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Gnome));
         setPseudocode({
             "1. index = 0",
             "2. while index < n:",

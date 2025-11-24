@@ -38,6 +38,7 @@ public:
     ~MainWindow();
 
     enum class SortAlgorithm { Bubble, Insertion, Selection, Quick, Merge, Heap, Shell, Tim, Radix, Gnome };
+    SortAlgorithm currentAlgorithm;
 private slots:
     void onStartClicked();
     void onTimerTick();
@@ -52,7 +53,7 @@ private:
 
 
 
-    SortAlgorithm currentAlgorithm;
+
     //Sorting state
     int i = 0, j = 0, key = 0, minIndex = 0;
 
@@ -170,6 +171,7 @@ private:
     QComboBox* distributionBox;
     QSlider* nearlySortedSlider;
     QLabel* nearlySortedValueLabel;
+    QLabel* bigoDescriptionLabel;
 
     void generateArrayFromControls(bool log = true);
     QGraphicsTextItem* complexityLabel = nullptr;
