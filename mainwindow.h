@@ -172,10 +172,11 @@ private:
     QSlider* nearlySortedSlider;
     QLabel* nearlySortedValueLabel;
     QLabel* bigoDescriptionLabel;
-
+    QCheckBox* darkModeToggle;
     void generateArrayFromControls(bool log = true);
     QGraphicsTextItem* complexityLabel = nullptr;
     QLabel* legendTitleLabel;
+    bool darkModeEnabled = false;
 
     // Pseudocode widget
     QListWidget* pseudocodeView;
@@ -222,5 +223,6 @@ private:
     void setStep(const QString& msg);
     void appendLog(const QString& msg);
     void updateScene();
+    void setDarkMode(bool enabled);
 };
 #endif // MAINWINDOW_H

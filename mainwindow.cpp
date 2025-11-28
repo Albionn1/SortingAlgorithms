@@ -12,7 +12,7 @@
 #include <QBrush>
 #include <QColor>
 #include <QString>
-
+#include <QStyleFactory>
 
 
 /*
@@ -30,6 +30,31 @@
     QWidget* central = new QWidget(this);
     QVBoxLayout* layout = new QVBoxLayout(central);
 
+    qApp->setStyle(QStyleFactory::create("Fusion"));
+
+    QPalette palette;
+    palette = QPalette();
+    palette.setColor(QPalette::Window, Qt::white);
+    palette.setColor(QPalette::WindowText, Qt::black);
+    palette.setColor(QPalette::Base, Qt::white);
+    palette.setColor(QPalette::AlternateBase, QColor(233,233,233));
+    palette.setColor(QPalette::ToolTipBase, Qt::black);
+    palette.setColor(QPalette::ToolTipText, Qt::black);
+    palette.setColor(QPalette::Text, Qt::black);
+    palette.setColor(QPalette::Button, QColor(240,240,240));
+    palette.setColor(QPalette::ButtonText, Qt::black);
+    palette.setColor(QPalette::BrightText, Qt::red);
+    palette.setColor(QPalette::Highlight, QColor(76,163,224));
+    palette.setColor(QPalette::HighlightedText, Qt::white);
+
+    qApp->setPalette(palette);
+
+    qApp->setStyleSheet(
+        "QCheckBox { color: black; } "
+        "QCheckBox::indicator { width: 10px; height: 10px; } "
+        "QCheckBox::indicator:unchecked { border: 1px solid black; background: transparent; } "
+        "QCheckBox::indicator:checked { border: 1px solid black; background: #4CA3E0; }"
+        );
 
     // Core widgets
     algorithmBox = new QComboBox();
@@ -107,6 +132,10 @@
     pseudocodeView->setFocusPolicy(Qt::NoFocus);
     pseudocodeView->setFixedWidth(420);
     pseudocodeView->setWordWrap(true);
+
+    // Dark mode toggle
+    darkModeToggle = new QCheckBox("Dark Mode", this);
+    layout->addWidget(darkModeToggle);
 
     // Layout: Algorithm + Start + Reset
     QHBoxLayout* sortControls = new QHBoxLayout();
@@ -193,6 +222,7 @@
     connect(resetButton, &QPushButton::clicked, this, &MainWindow::onResetClicked);
     connect(stepByStepCheck, &QCheckBox::toggled, this, &MainWindow::onStepModeToggled);
     connect(nextStepButton, &QPushButton::clicked, this, &MainWindow::onTimerTick);
+    connect(darkModeToggle, &QCheckBox::toggled, this, &MainWindow::setDarkMode);
     connect(delayBox, &QSlider::valueChanged, this, [&](int value) {
 
         int snapped = (value / 100) * 100;
@@ -297,6 +327,62 @@ static QString complexityText(MainWindow::SortAlgorithm alg) {
             return "";
     }
 }
+
+void MainWindow::setDarkMode(bool enabled) {
+    darkModeEnabled = enabled;
+
+    QPalette palette;
+    if (enabled) {
+        // Fusion Dark Palette
+        palette.setColor(QPalette::Window, QColor(53,53,53));
+        palette.setColor(QPalette::WindowText, Qt::white);
+        palette.setColor(QPalette::Base, QColor(42,42,42));
+        palette.setColor(QPalette::AlternateBase, QColor(66,66,66));
+        palette.setColor(QPalette::ToolTipBase, Qt::white);
+        palette.setColor(QPalette::ToolTipText, Qt::white);
+        palette.setColor(QPalette::Text, Qt::white);
+        palette.setColor(QPalette::Button, QColor(53,53,53));
+        palette.setColor(QPalette::ButtonText, Qt::white);
+        palette.setColor(QPalette::BrightText, Qt::red);
+        palette.setColor(QPalette::Highlight, QColor(142,45,197).lighter());
+        palette.setColor(QPalette::HighlightedText, Qt::black);
+
+        qApp->setPalette(palette);
+        qApp->setStyleSheet(
+            "QCheckBox { color: white; } "
+            "QCheckBox::indicator { width: 10px; height: 10px; } "
+            "QCheckBox::indicator:unchecked { border: 1px solid white; background: transparent; } "
+            "QCheckBox::indicator:checked { border: 1px solid white; background: #8E2DC5; }"
+            );
+    } else {
+        // Fusion Light Palette
+        palette.setColor(QPalette::Window, Qt::white);
+        palette.setColor(QPalette::WindowText, Qt::black);
+        palette.setColor(QPalette::Base, Qt::white);
+        palette.setColor(QPalette::AlternateBase, QColor(233,233,233));
+        palette.setColor(QPalette::ToolTipBase, Qt::black);
+        palette.setColor(QPalette::ToolTipText, Qt::black);
+        palette.setColor(QPalette::Text, Qt::black);
+        palette.setColor(QPalette::Button, QColor(240,240,240));
+        palette.setColor(QPalette::ButtonText, Qt::black);
+        palette.setColor(QPalette::BrightText, Qt::red);
+        palette.setColor(QPalette::Highlight, QColor(76,163,224));
+        palette.setColor(QPalette::HighlightedText, Qt::white);
+
+        qApp->setPalette(palette);
+        qApp->setStyleSheet(
+            "QCheckBox { color: black; } "
+            "QCheckBox::indicator { width: 10px; height: 10px; } "
+            "QCheckBox::indicator:unchecked { border: 1px solid black; background: transparent; } "
+            "QCheckBox::indicator:checked { border: 1px solid black; background: #4CA3E0; }"
+            );
+    }
+
+    // redraw bars with new default color
+    drawArray(array);
+    scene->update();
+}
+
 
 // Note: onAlgorithmSelected also sets pseudocode per algorithm.
 void MainWindow::onAlgorithmSelected(const QString& selected) {
@@ -719,6 +805,7 @@ void MainWindow::onResetClicked() {
 void MainWindow::onStartClicked() {
     QString selected = algorithmBox->currentText();
 
+
     // Reset histories
     history.clear();
     pivotHistory.clear();
@@ -988,6 +1075,7 @@ void MainWindow::onStartClicked() {
 void MainWindow::onTimerTick() {
     // Clear any scrubbing overlay so live state controls highlighting
     displayedSortedIndices.clear();
+
     // Bubble sort step
     if (currentAlgorithm == SortAlgorithm::Bubble) {
         if (i < static_cast<int>(array.size())) {
@@ -2006,16 +2094,23 @@ void MainWindow::drawArray(const std::vector<int>& arr) {
     for (int val : arr) {
         int barHeight = (maxVal > 0) ? (val * maxBarHeight / maxVal) : 0;
 
-        scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(Qt::blue));
+        QColor barColor = darkModeEnabled
+                              ? QColor(30, 144, 255)   // light blue for dark mode
+                              : QColor(65, 105, 225);   // royal blue for light mode
+
+        scene->addRect(x, 200 - barHeight, 20, barHeight, QPen(Qt::black), QBrush(barColor));
 
         QGraphicsTextItem* text = scene->addText(QString::number(val));
         text->setPos(x, 200 + 5);
 
         x += 30;
+
     }
+    scene->update();
 }
 
 void MainWindow::drawArrayFinished(const std::vector<int>& arr) {
+
     scene->clear();
 
     if (arr.empty()) return;
