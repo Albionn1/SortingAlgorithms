@@ -12,7 +12,7 @@ It animates each algorithm step by step, showing how elements are compared, swap
 The goal is to make algorithm behavior intuitive and easy to understand through both visual and textual feedback.
 
 
---How to Use
+                  How to Use
 
 
 After launching the application, select a sorting algorithm from the menu and press Start to begin the visualization.
@@ -36,7 +36,7 @@ You can adjust the animation speed in real time using the slider control.
 A legend is provided to explain the meaning of each color, and a log panel records each step of the algorithm for additional clarity.
 
 
---Purpose
+                    Purpose
 
 
 This program is intended for educational use.
