@@ -162,6 +162,9 @@ CMakeLists.txt.user*
 
 /build*/
 
+debug/
+
+release/
 
 
 
