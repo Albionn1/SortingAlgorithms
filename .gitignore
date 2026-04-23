@@ -160,7 +160,9 @@ CMakeLists.txt.user*
 
 .uic/
 
-/build*/
+build*/
+
+out/
 
 debug/
 
