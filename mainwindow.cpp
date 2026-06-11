@@ -278,8 +278,8 @@ void MainWindow::highlightPseudocodeLine(int index) {
         QFont f = it->font();
         f.setBold(false);
         it->setFont(f);
-        it->setForeground(QBrush(Qt::black));
-        it->setBackground(QBrush(Qt::white));
+        it->setForeground(QBrush(Qt::white));
+        it->setBackground(QColor(53,53,53));
     }
 
     // If invalid index, clear selection
