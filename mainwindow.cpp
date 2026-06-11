@@ -32,29 +32,125 @@
 
     qApp->setStyle(QStyleFactory::create("Fusion"));
 
-    QPalette palette;
-    palette = QPalette();
-    palette.setColor(QPalette::Window, Qt::white);
-    palette.setColor(QPalette::WindowText, Qt::black);
-    palette.setColor(QPalette::Base, Qt::white);
-    palette.setColor(QPalette::AlternateBase, QColor(233,233,233));
-    palette.setColor(QPalette::ToolTipBase, Qt::black);
-    palette.setColor(QPalette::ToolTipText, Qt::black);
-    palette.setColor(QPalette::Text, Qt::black);
-    palette.setColor(QPalette::Button, QColor(240,240,240));
-    palette.setColor(QPalette::ButtonText, Qt::black);
-    palette.setColor(QPalette::BrightText, Qt::red);
-    palette.setColor(QPalette::Highlight, QColor(76,163,224));
-    palette.setColor(QPalette::HighlightedText, Qt::white);
+    // The Ultra-Modern Dark Theme
+    QString modernTheme = R"(
+        /* Base Application: Soft Dark / Eye-Friendly */
+        QMainWindow, QWidget {
+            background-color: #1E1E1E; /* Softer dark gray, removes harsh black */
+            color: #DFDFDF; /* Off-white text to reduce glare and halation */
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+        }
 
-    qApp->setPalette(palette);
+        /* Sorting Canvas */
+        QGraphicsView {
+            background-color: #252526; /* Slightly elevated card color */
+            border: 1px solid #3E3E42;
+            border-radius: 8px;
+            margin: 10px;
+        }
 
-    qApp->setStyleSheet(
-        "QCheckBox { color: black; } "
-        "QCheckBox::indicator { width: 10px; height: 10px; } "
-        "QCheckBox::indicator:unchecked { border: 1px solid black; background: transparent; } "
-        "QCheckBox::indicator:checked { border: 1px solid black; background: #4CA3E0; }"
-        );
+        /* Gray/Minimalist Buttons */
+        QPushButton {
+            background-color: #333337;
+            color: #DFDFDF;
+            border: 1px solid #454545;
+            border-radius: 6px;
+            padding: 8px 20px;
+            font-weight: 600;
+        }
+        QPushButton:hover {
+            background-color: #3E3E42;
+            border: 1px solid #555555;
+        }
+        QPushButton:pressed {
+            background-color: #1E1E1E;
+        }
+        QPushButton:disabled {
+            background-color: #252526;
+            color: #666666;
+            border: 1px solid #333337;
+        }
+
+        /* ComboBox */
+        QComboBox {
+            background-color: #252526;
+            border: 1px solid #3E3E42;
+            border-radius: 6px;
+            padding: 6px 14px;
+            color: #DFDFDF;
+        }
+        QComboBox:hover {
+            border: 1px solid #555555;
+        }
+        QComboBox::drop-down {
+            border: none;
+            width: 30px;
+        }
+        QComboBox QAbstractItemView {
+            background-color: #252526;
+            border: 1px solid #3E3E42;
+            color: #DFDFDF;
+            selection-background-color: #3E3E42;
+            outline: none;
+        }
+
+        /* Minimalist Sliders */
+        QSlider::groove:horizontal {
+            height: 6px;
+            background: #3E3E42;
+            border-radius: 3px;
+        }
+        QSlider::sub-page:horizontal {
+            background: #71717A;
+            border-radius: 3px;
+        }
+        QSlider::handle:horizontal {
+            background: #DFDFDF;
+            border: 1px solid #555555;
+            width: 14px;
+            height: 14px;
+            margin: -4px 0;
+            border-radius: 7px;
+        }
+        QSlider::handle:horizontal:hover {
+            background: #FFFFFF;
+        }
+
+        /* Checkboxes */
+        QCheckBox {
+            color: #DFDFDF;
+            spacing: 8px;
+        }
+        QCheckBox::indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid #3E3E42;
+            background-color: #252526;
+        }
+        QCheckBox::indicator:hover {
+            border: 1px solid #555555;
+        }
+        QCheckBox::indicator:checked {
+            background-color: #A1A1AA;
+            border: 1px solid #A1A1AA;
+        }
+
+        /* Input Fields */
+        QSpinBox, QLineEdit {
+            background-color: #252526;
+            border: 1px solid #3E3E42;
+            border-radius: 6px;
+            padding: 5px;
+            color: #DFDFDF;
+        }
+        QSpinBox:hover, QLineEdit:hover {
+            border: 1px solid #555555;
+        }
+    )";
+
+    this->setStyleSheet(modernTheme);
 
     // Core widgets
     algorithmBox = new QComboBox();
@@ -2069,6 +2165,7 @@ void MainWindow::updateScene() {
 
         QGraphicsTextItem* text = scene->addText(QString::number(val));
         text->setPos(x, 200 + 5);
+        text->setDefaultTextColor(QColor("#DFDFDF"));
 
         x += 30;
     }
@@ -2102,6 +2199,7 @@ void MainWindow::drawArray(const std::vector<int>& arr) {
 
         QGraphicsTextItem* text = scene->addText(QString::number(val));
         text->setPos(x, 200 + 5);
+        text->setDefaultTextColor(QColor("#DFDFDF"));
 
         x += 30;
 
@@ -2125,6 +2223,7 @@ void MainWindow::drawArrayFinished(const std::vector<int>& arr) {
 
         QGraphicsTextItem* text = scene->addText(QString::number(val));
         text->setPos(x, 200 + 5);
+        text->setDefaultTextColor(QColor("#DFDFDF"));
 
         x += 30;
     }
@@ -2217,9 +2316,9 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
         QFont f = header->font();
         f.setBold(true);
         header->setFont(f);
-        header->setDefaultTextColor(Qt::black);
-        // Position header above the bars; bars start at y = 200 - maxBarHeight
+        header->setDefaultTextColor(QColor("#DFDFDF"));
         header->setPos(10, 200 - maxBarHeight - 24);
+
     }
 
     for (int k = 0; k < array.size(); ++k) {
@@ -2325,6 +2424,7 @@ void MainWindow::highlightComparison(int index1, int index2, int pivotIndex /* =
         QGraphicsTextItem* text = scene->addText(QString::number(array[k]));
         text->setPos(x, 200 + 5);
         x += 30;
+        text->setDefaultTextColor(QColor("#DFDFDF"));
     }
 
 }
