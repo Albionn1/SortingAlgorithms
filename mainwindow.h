@@ -172,7 +172,7 @@ private:
     QSlider* nearlySortedSlider;
     QLabel* nearlySortedValueLabel;
     QLabel* bigoDescriptionLabel;
-    QCheckBox* darkModeToggle;
+    // QCheckBox* darkModeToggle;
     void generateArrayFromControls(bool log = true);
     QGraphicsTextItem* complexityLabel = nullptr;
     QLabel* legendTitleLabel;

@@ -22,137 +22,102 @@
  *
  */
 
-    MainWindow::MainWindow(QWidget* parent)
+MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent), i(0), j(0), ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
+    if (this->centralWidget() && this->centralWidget()->layout()) {
+        delete this->centralWidget()->layout();
+    }
+
     QWidget* central = new QWidget(this);
-    QVBoxLayout* layout = new QVBoxLayout(central);
+    setCentralWidget(central);
 
     qApp->setStyle(QStyleFactory::create("Fusion"));
-
-    // The Ultra-Modern Dark Theme
     QString modernTheme = R"(
-        /* Base Application: Soft Dark / Eye-Friendly */
-        QMainWindow, QWidget {
-            background-color: #1E1E1E; /* Softer dark gray, removes harsh black */
-            color: #DFDFDF; /* Off-white text to reduce glare and halation */
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            font-size: 14px;
-        }
+    QMainWindow, QWidget { background-color: #1E1E1E; color: #DFDFDF; font-family: 'Segoe UI', sans-serif; font-size: 14px; }
 
-        /* Sorting Canvas */
-        QGraphicsView {
-            background-color: #252526; /* Slightly elevated card color */
-            border: 1px solid #3E3E42;
-            border-radius: 8px;
-            margin: 10px;
-        }
+    QGraphicsView { background-color: #252526; border: 1px solid #3E3E42; border-radius: 8px; margin: 10px; }
 
-        /* Gray/Minimalist Buttons */
-        QPushButton {
-            background-color: #333337;
-            color: #DFDFDF;
-            border: 1px solid #454545;
-            border-radius: 6px;
-            padding: 8px 20px;
-            font-weight: 600;
-        }
-        QPushButton:hover {
-            background-color: #3E3E42;
-            border: 1px solid #555555;
-        }
-        QPushButton:pressed {
-            background-color: #1E1E1E;
-        }
-        QPushButton:disabled {
-            background-color: #252526;
-            color: #666666;
-            border: 1px solid #333337;
-        }
+    QPushButton { background-color: #333337; color: #DFDFDF; border: 1px solid #454545; border-radius: 6px; padding: 8px 20px; font-weight: 600; }
+    QPushButton:hover { background-color: #3E3E42; border: 1px solid #555555; }
 
-        /* ComboBox */
-        QComboBox {
-            background-color: #252526;
-            border: 1px solid #3E3E42;
-            border-radius: 6px;
-            padding: 6px 14px;
-            color: #DFDFDF;
-        }
-        QComboBox:hover {
-            border: 1px solid #555555;
-        }
-        QComboBox::drop-down {
-            border: none;
-            width: 30px;
-        }
-        QComboBox QAbstractItemView {
-            background-color: #252526;
-            border: 1px solid #3E3E42;
-            color: #DFDFDF;
-            selection-background-color: #3E3E42;
-            outline: none;
-        }
+    QComboBox {
+        background-color: #252526;
+        border: 1px solid #3E3E42;
+        border-radius: 6px;
+        padding: 5px 10px;
+        color: #DFDFDF;
+    }
 
-        /* Minimalist Sliders */
-        QSlider::groove:horizontal {
-            height: 6px;
-            background: #3E3E42;
-            border-radius: 3px;
-        }
-        QSlider::sub-page:horizontal {
-            background: #71717A;
-            border-radius: 3px;
-        }
-        QSlider::handle:horizontal {
-            background: #DFDFDF;
-            border: 1px solid #555555;
-            width: 14px;
-            height: 14px;
-            margin: -4px 0;
-            border-radius: 7px;
-        }
-        QSlider::handle:horizontal:hover {
-            background: #FFFFFF;
-        }
+    QComboBox:hover {
+        background-color: #333337;
+        border: 1px solid #555555;
+    }
 
-        /* Checkboxes */
-        QCheckBox {
+    QComboBox:on {
+        background-color: #3E3E42;
+        border: 1px solid #71717A;
+    }
+
+    QComboBox::drop-down {
+        border: none;
+        width: 0px; /* Hides the indicator area */
+    }
+
+    QComboBox QAbstractItemView {
+        background-color: #252526;
+        border: 1px solid #3E3E42;
+        border-radius: 6px;
+        selection-background-color: #3E3E42;
+        selection-color: #FFFFFF;
+        outline: none;
+        margin-top: 2px;
+    }
+
+    QCheckBox {
             color: #DFDFDF;
             spacing: 8px;
         }
-        QCheckBox::indicator {
-            width: 18px;
-            height: 18px;
-            border-radius: 4px;
-            border: 1px solid #3E3E42;
-            background-color: #252526;
-        }
-        QCheckBox::indicator:hover {
-            border: 1px solid #555555;
-        }
-        QCheckBox::indicator:checked {
-            background-color: #A1A1AA;
-            border: 1px solid #A1A1AA;
-        }
 
-        /* Input Fields */
-        QSpinBox, QLineEdit {
-            background-color: #252526;
-            border: 1px solid #3E3E42;
-            border-radius: 6px;
-            padding: 5px;
-            color: #DFDFDF;
-        }
-        QSpinBox:hover, QLineEdit:hover {
-            border: 1px solid #555555;
-        }
+    QCheckBox::indicator {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #DFDFDF;
+            background: #252526;
+    }
+
+    QCheckBox::indicator:checked {
+        border: 1px solid white;
+        background-color: #71717A;
+    }
+    QLineEdit {
+        background-color: #2D2D2D;
+        border: 1px solid #555555;
+        border-radius: 6px;
+        padding: 6px;
+        color: #DFDFDF;
+        selection-background-color: #555555;
+    }
+
+    QLineEdit:focus {
+        border: 1px solid #71717A;
+        background-color: #333333;
+    }
+
+    /* Slider, Checkbox, SpinBox, LineEdit */
+    QSlider::groove:horizontal { height: 6px; background: #3E3E42; border-radius: 3px; }
+    QSlider::sub-page:horizontal { background: #71717A; border-radius: 3px; }
+    QSlider::handle:horizontal { background: #DFDFDF; border-radius: 7px; width: 14px; height: 14px; margin: -4px 0; }
+    // QCheckBox { color: #DFDFDF; spacing: 8px; }
+    QSpinBox { background-color: #2D2D2D; border: 1px solid #555555; border-radius: 6px; padding: 5px; color: #DFDFDF; }
+    QLineEdit:focus { border: 1px solid #71717A; background-color: #333333; }
+
     )";
-
     this->setStyleSheet(modernTheme);
 
-    // Core widgets
+    //CORE WIDGET INITIALIZATION
     algorithmBox = new QComboBox();
     algorithmBox->addItems({ "Bubble Sort", "Insertion Sort", "Selection Sort", "Quick Sort", "Merge Sort", "Heap Sort", "Shell Sort", "Tim Sort", "Radix Sort", "Gnome Sort" });
 
@@ -160,26 +125,20 @@
     resetButton = new QPushButton("Reset to Default");
     randomButton = new QPushButton("Random Input");
 
-    // Size and distribution controls
     sizeSpinBox = new QSpinBox();
     sizeSpinBox->setRange(2, 200);
     sizeSpinBox->setValue(20);
-    sizeSpinBox->setToolTip("Number of elements to generate for the array");
 
     distributionBox = new QComboBox();
     distributionBox->addItems({ "Random", "Sorted", "Reversed", "Nearly Sorted" });
-    distributionBox->setToolTip("Choose data distribution for generated array");
+
+    algorithmBox->setView(new QListView());
+    distributionBox->setView(new QListView());
 
     nearlySortedSlider = new QSlider(Qt::Horizontal, this);
     nearlySortedSlider->setRange(0, 100);
-    nearlySortedSlider->setSingleStep(5);
-    nearlySortedSlider->setPageStep(5);
-    nearlySortedSlider->setTickInterval(5);
-    nearlySortedSlider->setTickPosition(QSlider::TicksBelow);
     nearlySortedSlider->setValue(10);
-    nearlySortedSlider->setToolTip("Percent of elements to randomly swap in a nearly-sorted array");
-
-    nearlySortedSlider->setFixedWidth(150); // make the perturb slider smaller (~half)
+    nearlySortedSlider->setFixedWidth(150);
     nearlySortedValueLabel = new QLabel("10 %");
     nearlySortedValueLabel->setFixedWidth(36);
 
@@ -188,17 +147,11 @@
     nextStepButton->setEnabled(false);
 
     delayBox = new QSlider(Qt::Horizontal, this);
-    delayBox->setRange(100, 5000);
-    delayBox->setValue(1000);
-    delayBox->setTickInterval(100);
-    delayBox->setSingleStep(100);
-    delayBox->setPageStep(100);
-    delayBox->setToolTip("Adjust animation speed (ms delay)");
+    delayBox->setRange(50, 2000);
+    delayBox->setValue(500);
 
     inputField = new QLineEdit();
-    inputField->setPlaceholderText("Enter numbers separated by spaces");
     inputField->setText("58 12 91 7 34 76 25 63 89 3 47 68 20 99 14 55 81 39 6 72");
-    inputField->setToolTip("Enter numbers separated by spaces. You can replace the default list.");
 
     view = new QGraphicsView();
     scene = new QGraphicsScene(this);
@@ -206,119 +159,88 @@
 
     stepLabel = new QLabel("Ready");
     logView = new QPlainTextEdit();
-    logView->setPlaceholderText("All the steps will be shown here in detail");
     logView->setReadOnly(true);
 
-    descriptionLabel = new QLabel();
-    descriptionLabel->setWordWrap(true);
-
-    bigoDescriptionLabel = new QLabel();
-    bigoDescriptionLabel->setText("Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)");
-
-    descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted."); //DEFAULT STARTING ALGORITHM
-
-    slider = new QSlider(Qt::Horizontal);
-    slider->setMinimum(0);
-    slider->setMaximum(0);
-    slider->setToolTip("Drag to scrub through sorting steps");
-
-    // Pseudocode view
-    pseudocodeView = new QListWidget();
-    pseudocodeView->setSelectionMode(QAbstractItemView::SingleSelection);
-    pseudocodeView->setFocusPolicy(Qt::NoFocus);
-    pseudocodeView->setFixedWidth(420);
-    pseudocodeView->setWordWrap(true);
-
-    // Dark mode toggle
-    darkModeToggle = new QCheckBox("Dark Mode", this);
-    layout->addWidget(darkModeToggle);
-
-    // Layout: Algorithm + Start + Reset
-    QHBoxLayout* sortControls = new QHBoxLayout();
-    sortControls->addWidget(new QLabel("Algorithm:"));
-    sortControls->addWidget(algorithmBox);
-    sortControls->addWidget(startButton);
-    sortControls->addWidget(randomButton);
-    sortControls->addWidget(new QLabel("Size:"));
-    sortControls->addWidget(sizeSpinBox);
-    sortControls->addWidget(new QLabel("Distribution:"));
-    sortControls->addWidget(distributionBox);
-    sortControls->addWidget(new QLabel("Perturb:"));
-    sortControls->addWidget(nearlySortedSlider);
-    sortControls->addWidget(nearlySortedValueLabel);
-    sortControls->addWidget(resetButton);
-    layout->addLayout(sortControls);
-
-    // Layout: Input field
-    QHBoxLayout* inputRow = new QHBoxLayout();
-    inputRow->addWidget(new QLabel("Input:"));
-    inputRow->addWidget(inputField);
-    layout->addLayout(inputRow);
-
-    // Layout: Delay + Step-by-step + Next
-    QHBoxLayout* timingControls = new QHBoxLayout();
-    timingControls->addWidget(new QLabel("Speed:"));
-    timingControls->addWidget(delayBox);
-    timingControls->addWidget(stepByStepCheck);
-    timingControls->addWidget(nextStepButton);
-    layout->addLayout(timingControls);
-
-    // Layout: Slider + Step label
-    QHBoxLayout* sliderRow = new QHBoxLayout();
-    sliderRow->addWidget(new QLabel("Scrub:"));
-    sliderRow->addWidget(slider);
-    sliderRow->addWidget(stepLabel);
-    layout->addLayout(sliderRow);
-
-    // Legend
-    QVBoxLayout* legendContainer = new QVBoxLayout();
     legendTitleLabel = new QLabel("Legend");
-    legendTitleLabel->setStyleSheet("font-weight: bold; font-size: 14px;");
     legendLayout = new QHBoxLayout();
 
-    legendContainer->addWidget(legendTitleLabel);
-    legendContainer->addLayout(legendLayout);
+    descriptionLabel = new QLabel("Bubble Sort - Simple but slow.");
+    bigoDescriptionLabel = new QLabel("Best Case: O(n)\nAverage Case: O(n^2)\nWorst Case: O(n^2)");
 
+    slider = new QSlider(Qt::Horizontal);
+    pseudocodeView = new QListWidget();
+    pseudocodeView->setFixedWidth(420);
 
-    QWidget* legendWidget = new QWidget();
-    legendWidget->setLayout(legendContainer);
-    layout->addWidget(legendWidget);
+    // darkModeToggle = new QCheckBox("Dark Mode", this);
 
-    // Main visual + pseudocode + log (side-by-side)
-    QHBoxLayout* mainRow = new QHBoxLayout();
-    // left: graphics view
-    mainRow->addWidget(view, /*stretch=*/3);
+    //MASTER LAYOUT CONSTRUCTION
+    QVBoxLayout* mainLayout = new QVBoxLayout(central);
+    mainLayout->setContentsMargins(15, 15, 15, 15);
+    mainLayout->setSpacing(10);
 
-    // right: pseudocode above log + description
-    QVBoxLayout* rightCol = new QVBoxLayout();
-    QLabel* pcLabel = new QLabel("Pseudocode");
-    pcLabel->setStyleSheet("font-weight:bold;");
-    rightCol->addWidget(pcLabel);
-    rightCol->addWidget(pseudocodeView);
-    rightCol->addWidget(new QLabel("Log"));
-    rightCol->addWidget(logView, /*stretch=*/2);
-    rightCol->addWidget(descriptionLabel);
-    rightCol->addWidget(bigoDescriptionLabel);
+    QHBoxLayout* topToolbar = new QHBoxLayout();
+    topToolbar->addWidget(new QLabel("Algorithm:"));
+    topToolbar->addWidget(algorithmBox);
+    topToolbar->addWidget(startButton);
+    topToolbar->addWidget(randomButton);
+    topToolbar->addWidget(resetButton);
+    topToolbar->addSpacing(15);
+    topToolbar->addWidget(new QLabel("Size:"));
+    topToolbar->addWidget(sizeSpinBox);
+    topToolbar->addWidget(new QLabel("Distribution:"));
+    topToolbar->addWidget(distributionBox);
+    topToolbar->addWidget(new QLabel("Perturb:"));
+    topToolbar->addWidget(nearlySortedSlider);
+    topToolbar->addWidget(nearlySortedValueLabel);
+    topToolbar->addStretch();
+    // topToolbar->addWidget(darkModeToggle);
+    mainLayout->addLayout(topToolbar);
 
-    QWidget* rightWidget = new QWidget();
-    rightWidget->setLayout(rightCol);
-    mainRow->addWidget(rightWidget, /*stretch=*/2);
+    QHBoxLayout* inputRow = new QHBoxLayout();
+    inputRow->addWidget(new QLabel("Input Array:"));
+    inputRow->addWidget(inputField);
+    mainLayout->addLayout(inputRow);
 
-    layout->addLayout(mainRow);
+    QHBoxLayout* workspaceLayout = new QHBoxLayout();
+    QVBoxLayout* leftColumn = new QVBoxLayout();
+    leftColumn->addWidget(view, 1);
 
-    // Finalize
-    setCentralWidget(central);
+    QHBoxLayout* timelineRow = new QHBoxLayout();
+    timelineRow->addWidget(new QLabel("Speed:"));
+    timelineRow->addWidget(delayBox);
+    timelineRow->addWidget(stepByStepCheck);
+    timelineRow->addWidget(nextStepButton);
+    timelineRow->addWidget(new QLabel("Scrub Timeline:"));
+    timelineRow->addWidget(slider, 1);
+    timelineRow->addWidget(stepLabel);
+    leftColumn->addLayout(timelineRow);
+    workspaceLayout->addLayout(leftColumn, 3);
+
+    QVBoxLayout* rightColumn = new QVBoxLayout();
+    rightColumn->addWidget(new QLabel("Pseudocode"));
+    rightColumn->addWidget(pseudocodeView);
+    pseudocodeView->setFixedWidth(420);
+    rightColumn->addWidget(descriptionLabel);
+    rightColumn->addWidget(bigoDescriptionLabel);
+    rightColumn->addWidget(new QLabel("Execution Log"));
+    rightColumn->addWidget(logView);
+    rightColumn->addWidget(legendTitleLabel);
+    rightColumn->addLayout(legendLayout);
+    workspaceLayout->addLayout(rightColumn, 1);
+
+    mainLayout->addLayout(workspaceLayout, 1);
     resize(1400, 900);
     setWindowTitle("Sorting Algorithms Visualizer");
 
-    // Connections
+    //  CONNECTIONS
+
     timer = new QTimer(this);
     connect(startButton, &QPushButton::clicked, this, &MainWindow::onStartClicked);
     connect(timer, &QTimer::timeout, this, &MainWindow::onTimerTick);
     connect(resetButton, &QPushButton::clicked, this, &MainWindow::onResetClicked);
     connect(stepByStepCheck, &QCheckBox::toggled, this, &MainWindow::onStepModeToggled);
     connect(nextStepButton, &QPushButton::clicked, this, &MainWindow::onTimerTick);
-    connect(darkModeToggle, &QCheckBox::toggled, this, &MainWindow::setDarkMode);
+    // connect(darkModeToggle, &QCheckBox::toggled, this, &MainWindow::setDarkMode);
     connect(delayBox, &QSlider::valueChanged, this, [&](int value) {
 
         int snapped = (value / 100) * 100;
@@ -338,12 +260,11 @@
     connect(sizeSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &MainWindow::onControlsChanged);
     connect(nearlySortedSlider, &QSlider::valueChanged, this, [&](int v){
         nearlySortedValueLabel->setText(QString::number(v) + " %");
-        // Only regenerate when Nearly Sorted is selected; otherwise just update label
+
         if (distributionBox->currentText() == "Nearly Sorted")
             onControlsChanged();
     });
 
-    // Initialize visibility/state of the perturb controls based on current distribution
     bool isNearly = (distributionBox->currentText() == "Nearly Sorted");
     nearlySortedSlider->setVisible(isNearly);
     nearlySortedValueLabel->setVisible(isNearly);
@@ -352,6 +273,8 @@
     connect(algorithmBox, &QComboBox::currentTextChanged, this, &MainWindow::onAlgorithmSelected);
     connect(slider, &QSlider::valueChanged, this, &MainWindow::onSliderMoved);
 
+    algorithmBox->setCurrentText("Bubble Sort");
+    onAlgorithmSelected("Bubble Sort");
 }
 
 void MainWindow::setPseudocode(const QStringList& lines) {
@@ -378,7 +301,6 @@ void MainWindow::highlightPseudocodeLine(int index) {
         it->setBackground(QColor(53,53,53));
     }
 
-    // If invalid index, clear selection
     if (index < 0 || index >= pseudocodeView->count()) {
         pseudocodeView->clearSelection();
         pseudocodeView->setCurrentRow(-1);
@@ -386,12 +308,11 @@ void MainWindow::highlightPseudocodeLine(int index) {
         return;
     }
 
-    // Style the active line
     QListWidgetItem* active = pseudocodeView->item(index);
     QFont af = active->font();
     af.setBold(true);
     active->setFont(af);
-    active->setForeground(QBrush(QColor(30, 144, 255))); // DodgerBlue
+    active->setForeground(QBrush(QColor(30, 144, 255)));
     active->setBackground(QBrush(QColor(230, 245, 255)));
     pseudocodeView->setCurrentRow(index);
     pseudocodeCurrent = index;
@@ -480,177 +401,194 @@ void MainWindow::setDarkMode(bool enabled) {
 }
 
 
-// Note: onAlgorithmSelected also sets pseudocode per algorithm.
+// onAlgorithmSelected also sets pseudocode per algorithm.
 void MainWindow::onAlgorithmSelected(const QString& selected) {
-    // Clear existing legend items
-    QLayoutItem* child;
-    while ((child = legendLayout->takeAt(0)) != nullptr) {
-        delete child->widget();
-        delete child;
+    if (!legendLayout) return;
+
+    legendLayout->parentWidget()->setUpdatesEnabled(false);
+
+    while (QLayoutItem* item = legendLayout->takeAt(0)) {
+        if (QWidget* widget = item->widget()) {
+            widget->hide();
+            widget->deleteLater();
+        }
+        delete item;
     }
 
-    auto makeLegendItem = [](const QString& colorName, const QString& labelText) {
+    auto makeLegendItem = [this](const QString& colorName, const QString& labelText) { // Add [this]
         QLabel* colorBox = new QLabel();
         colorBox->setFixedSize(20, 20);
-        colorBox->setStyleSheet("background-color:" + colorName + "; border:1px solid #444;");
+        colorBox->setStyleSheet("background-color:" + colorName + "; border:1px solid #444; border-radius: 4px;");
         QLabel* textLabel = new QLabel(labelText);
+
         QHBoxLayout* itemLayout = new QHBoxLayout();
+        itemLayout->setContentsMargins(0, 0, 0, 0);
         itemLayout->addWidget(colorBox);
         itemLayout->addWidget(textLabel);
-        QWidget* itemWidget = new QWidget();
+        QWidget* itemWidget = new QWidget(this);
         itemWidget->setLayout(itemLayout);
-        return itemWidget;
-        };
 
-    if (selected == "Heap Sort") {
-        legendTitleLabel->setText("Legend — Heap Sort");
-        legendLayout->addWidget(makeLegendItem("orange", "Heapify Comparison"));
-        legendLayout->addWidget(makeLegendItem("red", "Extraction Swap"));
-        legendLayout->addWidget(makeLegendItem("green", "Sorted Element"));
-        descriptionLabel->setText("Heap Sort – An in-place, comparison-based algorithm that builds a binary heap and repeatedly extracts the maximum.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Heap));
+        return itemWidget;
+    };
+
+    pseudocodeView->clear();
+
+    if (selected == "Bubble Sort") {
+        legendTitleLabel->setText("Legend — Bubble Sort");
+        legendLayout->addWidget(makeLegendItem("crimson", "Comparison"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements.");
+        bigoDescriptionLabel->setText("Best: O(n) | Avg: O(n^2) | Worst: O(n^2)");
         setPseudocode({
-            "1. Build max-heap from array",
-            "2. For each node: heapify (compare and swap children)",
-            "3. Swap root with last element (extract max)",
-            "4. Repeat until sorted"
-            });
+            "for i = 0 to n-1:",
+            "  for j = 0 to n-i-2:",
+            "    if A[j] > A[j+1]:",
+            "      swap(A[j], A[j+1])"
+        });
+    }
+    else if (selected == "Insertion Sort") {
+        legendTitleLabel->setText("Legend — Insertion Sort");
+        legendLayout->addWidget(makeLegendItem("royalblue", "Key"));
+        legendLayout->addWidget(makeLegendItem("orange", "Comparing"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Insertion Sort - Builds the sorted array one item at a time.");
+        bigoDescriptionLabel->setText("Best: O(n) | Avg: O(n^2) | Worst: O(n^2)");
+        setPseudocode({
+            "for i = 1 to n-1:",
+            "  key = A[i], j = i-1",
+            "  while j >= 0 and A[j] > key:",
+            "    A[j+1] = A[j], j = j-1",
+            "  A[j+1] = key"
+        });
+    }
+    else if (selected == "Selection Sort") {
+        legendTitleLabel->setText("Legend — Selection Sort");
+        legendLayout->addWidget(makeLegendItem("purple", "Min"));
+        legendLayout->addWidget(makeLegendItem("red", "Comparing"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Selection Sort - Finds the minimum and places it at the start.");
+        bigoDescriptionLabel->setText("Best: O(n^2) | Avg: O(n^2) | Worst: O(n^2)");
+        setPseudocode({
+            "for i = 0 to n-2:",
+            "  min_idx = i",
+            "  for j = i+1 to n-1:",
+            "    if A[j] < A[min_idx]: min_idx = j",
+            "  swap(A[i], A[min_idx])"
+        });
     }
     else if (selected == "Quick Sort") {
         legendTitleLabel->setText("Legend — Quick Sort");
         legendLayout->addWidget(makeLegendItem("mediumorchid", "Pivot"));
         legendLayout->addWidget(makeLegendItem("dodgerblue", "Comparing"));
         legendLayout->addWidget(makeLegendItem("green", "Sorted"));
-        descriptionLabel->setText("Quick Sort - Efficient divide-and-conquer using a pivot. Fast on average, but worst-case is quadratic.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Quick));
+        descriptionLabel->setText("Quick Sort - Divide-and-conquer using a pivot element.");
+        bigoDescriptionLabel->setText("Best: O(n log n) | Avg: O(n log n) | Worst: O(n^2)");
         setPseudocode({
-            "1. Choose pivot (rightmost)",
-            "2. Partition: for j=left..right-1 compare with pivot; if less swap",
-            "3. Place pivot by swapping A[i+1] and A[right]",
-            "4. Push left/right partitions to stack and repeat",
-            "5. Finished"
-            });
+            "partition(A, low, high):",
+            "  pivot = A[high]",
+            "  i = low - 1",
+            "  for j = low to high-1:",
+            "    if A[j] < pivot: swap(A[++i], A[j])",
+            "  swap(A[i+1], A[high])"
+        });
     }
     else if (selected == "Merge Sort") {
         legendTitleLabel->setText("Legend — Merge Sort");
-        legendLayout->addWidget(makeLegendItem("cyan", "Left Half"));
-        legendLayout->addWidget(makeLegendItem("deeppink", "Right Half"));
-        legendLayout->addWidget(makeLegendItem("green", "Merged Output"));
-        descriptionLabel->setText("Merge Sort – A stable, divide-and-conquer algorithm that recursively splits and merges arrays for guaranteed O(n log n) performance.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Merge));
+        legendLayout->addWidget(makeLegendItem("cyan", "Left"));
+        legendLayout->addWidget(makeLegendItem("deeppink", "Right"));
+        legendLayout->addWidget(makeLegendItem("green", "Merged"));
+        descriptionLabel->setText("Merge Sort - Stable divide-and-conquer algorithm.");
+        bigoDescriptionLabel->setText("Best: O(n log n) | Avg: O(n log n) | Worst: O(n log n)");
         setPseudocode({
-            "1. If left >= right return",
-            "2. mid = (left+right)/2",
-            "3. sort(left, mid)",
-            "4. sort(mid+1, right)",
-            "5. merge two halves into temporary buffer and copy back",
-            "6. Finished"
-            });
+            "mergeSort(A, l, r):",
+            "  if l < r:",
+            "    mid = (l+r)/2",
+            "    mergeSort(A, l, mid)",
+            "    mergeSort(A, mid+1, r)",
+            "    merge(A, l, mid, r)"
+        });
     }
-    else if (selected == "Bubble Sort") {
-        legendTitleLabel->setText("Legend — Bubble Sort");
-        legendLayout->addWidget(makeLegendItem("crimson", "Current Comparison"));
-        legendLayout->addWidget(makeLegendItem("green", "Sorted Tail"));
-        descriptionLabel->setText("Bubble Sort - Simple but slow. Repeatedly swaps adjacent elements until sorted.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Bubble));
+    else if (selected == "Heap Sort") {
+        legendTitleLabel->setText("Legend — Heap Sort");
+        legendLayout->addWidget(makeLegendItem("orange", "Heapify"));
+        legendLayout->addWidget(makeLegendItem("red", "Swap"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Heap Sort - Uses a binary heap data structure.");
+        bigoDescriptionLabel->setText("Best: O(n log n) | Avg: O(n log n) | Worst: O(n log n)");
         setPseudocode({
-            "1. for i = 0 to n-1",
-            "2.   for j = 0 to n-i-2",
-            "3.     compare A[j] and A[j+1]",
-            "4.     if A[j] > A[j+1] swap",
-            "5.   mark position n-i-1 as settled",
-            "6. finished"
-            });
-    }
-    else if (selected == "Insertion Sort") {
-        legendTitleLabel->setText("Legend — Insertion Sort");
-        legendLayout->addWidget(makeLegendItem("royalblue", "Key Element"));
-        legendLayout->addWidget(makeLegendItem("orange", "Comparing Position"));
-        legendLayout->addWidget(makeLegendItem("green", "Inserted / Sorted"));
-        descriptionLabel->setText("Insertion Sort - Builds the sorted array one item at a time. Fast on nearly sorted data.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Insertion));
-        setPseudocode({
-            "1. for i = 1 to n-1",
-            "2.   key = A[i]; j = i-1",
-            "3.   while j >= 0 and A[j] > key: A[j+1] = A[j]; j--",
-            "4.   A[j+1] = key",
-            "5. finished"
-            });
-    }
-    else if (selected == "Selection Sort") {
-        legendTitleLabel->setText("Legend — Selection Sort");
-        legendLayout->addWidget(makeLegendItem("purple", "Current Minimum"));
-        legendLayout->addWidget(makeLegendItem("red", "Comparing"));
-        legendLayout->addWidget(makeLegendItem("green", "Sorted Prefix"));
-        descriptionLabel->setText("Selection Sort - Finds the minimum and places it. Easy to understand, but always O(n^2).");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Selection));
-        setPseudocode({
-            "1. for i = 0 to n-2",
-            "2.   min = i",
-            "3.   for j = i+1 to n-1 if A[j] < A[min] min = j",
-            "4.   swap A[i], A[min]",
-            "5. finished"
-            });
+            "buildMaxHeap(A):",
+            "  for i = n/2-1 down to 0: heapify(A, n, i)",
+            "extractAndSort(A):",
+            "  for i = n-1 down to 1:",
+            "    swap(A[0], A[i]), heapify(A, i, 0)"
+        });
     }
     else if (selected == "Shell Sort") {
         legendTitleLabel->setText("Legend — Shell Sort");
-        legendLayout->addWidget(makeLegendItem("royalblue", "Key Element"));
-        legendLayout->addWidget(makeLegendItem("orange", "Gap Comparison"));
-        legendLayout->addWidget(makeLegendItem("green", "Sorted / Final"));
-        descriptionLabel->setText("Shell Sort – An adaptive, gap-based algorithm that generalizes insertion sort for faster practical performance.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Shell));
+        legendLayout->addWidget(makeLegendItem("royalblue", "Key"));
+        legendLayout->addWidget(makeLegendItem("orange", "Gap"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Shell Sort - Optimized Insertion Sort using gaps.");
+        bigoDescriptionLabel->setText("Best: O(n log n) | Avg: O(n^1.5) | Worst: O(n^2)");
         setPseudocode({
-            "1. gap = n/2",
-            "2. while gap > 0: do gapped insertion sort for gap",
-            "3. gap /= 2",
-            "4. finished"
-            });
+            "gap = n/2",
+            "while gap > 0:",
+            "  for i = gap to n-1:",
+            "    temp = A[i], j = i",
+            "    while j >= gap and A[j-gap] > temp:",
+            "      A[j] = A[j-gap], j -= gap",
+            "    A[j] = temp",
+            "  gap /= 2"
+        });
     }
     else if (selected == "Tim Sort") {
-        legendTitleLabel->setText("Legend — TimSort");
-        legendLayout->addWidget(makeLegendItem("royalblue", "Key Element (Insertion in runs)"));
-        legendLayout->addWidget(makeLegendItem("orange", "Comparison (Insertion/Merge)"));
-        legendLayout->addWidget(makeLegendItem("green", "Placed / Sorted"));
-        descriptionLabel->setText("TimSort – A hybrid, stable algorithm that blends merge sort and insertion sort for adaptive performance.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Tim));
+        legendTitleLabel->setText("Legend — Tim Sort");
+        legendLayout->addWidget(makeLegendItem("royalblue", "Insertion"));
+        legendLayout->addWidget(makeLegendItem("orange", "Merge"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Tim Sort - Hybrid of Merge and Insertion sort.");
+        bigoDescriptionLabel->setText("Best: O(n) | Avg: O(n log n) | Worst: O(n log n)");
         setPseudocode({
-            "1. Break array into runs (e.g. 32)",
-            "2. Insertion-sort each run",
-            "3. Merge runs pairwise until one run covers array",
-            "4. finished"
-            });
+            "1. Identify small runs (size 32-64)",
+            "2. Sort each run with Insertion Sort",
+            "3. Merge runs using Merge Sort logic",
+            "4. Adaptive: use Galloping mode for speed"
+        });
     }
     else if (selected == "Radix Sort") {
         legendTitleLabel->setText("Legend — Radix Sort");
-        legendLayout->addWidget(makeLegendItem("royalblue", "Current Digit"));
-        legendLayout->addWidget(makeLegendItem("orange", "Bucket Placement"));
-        legendLayout->addWidget(makeLegendItem("green", "Sorted Output"));
-        descriptionLabel->setText("Radix Sort – A non-comparative, stable algorithm that sorts digit by digit using counting sort.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Radix));
+        legendLayout->addWidget(makeLegendItem("royalblue", "Digit"));
+        legendLayout->addWidget(makeLegendItem("orange", "Bucketing"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Radix Sort - Non-comparative digit-based sort.");
+        bigoDescriptionLabel->setText("Best: O(nk) | Avg: O(nk) | Worst: O(nk)");
         setPseudocode({
-            "1. For digitPlace = 1; digitPlace <= max; digitPlace *= 10:",
-            "2.   count digits at digitPlace",
-            "3.   accumulate counts",
-            "4.   place items into bucket by digit",
-            "5.   copy buckets back to array",
-            "6. finished"
-            });
+            "exp = 1",
+            "while max_val/exp > 0:",
+            "  countSort by digit at exp",
+            "  exp *= 10"
+        });
     }
     else if (selected == "Gnome Sort") {
         legendTitleLabel->setText("Legend — Gnome Sort");
-        legendLayout->addWidget(makeLegendItem("magenta", "Current Gnome Position"));
-        legendLayout->addWidget(makeLegendItem("cyan", "Neighbor Being Compared"));
-        legendLayout->addWidget(makeLegendItem("green", "Sorted Section"));
-        descriptionLabel->setText("Gnome Sort – A simple algorithm that moves elements back and forth like a garden gnome tidying a line.");
-        bigoDescriptionLabel->setText(complexityText(SortAlgorithm::Gnome));
+        legendLayout->addWidget(makeLegendItem("magenta", "Position"));
+        legendLayout->addWidget(makeLegendItem("cyan", "Neighbor"));
+        legendLayout->addWidget(makeLegendItem("green", "Sorted"));
+        descriptionLabel->setText("Gnome Sort - Simple swap-based algorithm.");
+        bigoDescriptionLabel->setText("Best: O(n) | Avg: O(n^2) | Worst: O(n^2)");
         setPseudocode({
-            "1. index = 0",
-            "2. while index < n:",
-            "3.   if index == 0 or A[index] >= A[index-1]: index++",
-            "4.   else swap A[index], A[index-1]; index--",
-            "5. finished"
-            });
+            "index = 0",
+            "while index < n:",
+            "  if index == 0 or A[index] >= A[index-1]:",
+            "    index++",
+            "  else:",
+            "    swap(A[index], A[index-1]), index--"
+        });
     }
+
+    legendLayout->activate();
+    legendLayout->parentWidget()->setUpdatesEnabled(true);
+    legendLayout->parentWidget()->update();
 }
 
 void MainWindow::onRandomClicked() {
